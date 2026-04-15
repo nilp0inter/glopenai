@@ -64,23 +64,65 @@ No HTTP client dependency.
 
 **Stats**: ~2500 lines of Gleam, 23 tests passing, 0 warnings.
 
+#### Examples (Phase 1)
+
+| File | Ports from | Status |
+|------|-----------|--------|
+| `dev/example/chat.gleam` | `examples/chat/` | ✅ |
+| `dev/example/chat_store.gleam` | `examples/chat-store/` | ✅ |
+| `dev/example/embedding.gleam` | `examples/embeddings/` | ✅ |
+| `dev/example/model.gleam` | `examples/models/` | ✅ |
+| `dev/example/structured_output.gleam` | `examples/structured-outputs/` | ✅ |
+| `dev/example/vision_chat.gleam` | `examples/vision-chat/` | ✅ |
+| `dev/example/web_search.gleam` | `examples/web-search/` | ✅ |
+| `dev/example/tool_call.gleam` | `examples/tool-call/` | ✅ |
+| `dev/example/azure.gleam` | `examples/azure/` | ✅ (requires Azure credentials) |
+| `dev/example/ollama_chat.gleam` | `examples/ollama-chat/` | ✅ (requires Ollama) |
+| `dev/example/env.gleam` | — | ✅ Shared helper: `OPENAI_API_KEY` loader |
+
 ---
 
-### Phase 2 — Moderation, Image, Audio, File ❌ TODO
+### Phase 2 — Moderation, Image, Audio, File ✅ DONE
 
 Each module follows the same pattern: types + encoders + decoders + request/response pairs.
 
-| Module | Rust reference | Notes |
-|--------|---------------|-------|
-| `src/glaoi/moderation.gleam` | `types/moderations/moderation.rs` | `ModerationInput` (String/Array/MultiModal), `Categories` (12 bool fields), `CategoryScore` (12 float fields), `CreateModerationRequest` + builder, `CreateModerationResponse`, `ContentModerationResult` |
-| `src/glaoi/image.gleam` | `types/images/image.rs`, `form.rs` | `CreateImageRequest` + builder, `ImageSize` (8 variants), `ImageModel`, `ImageQuality`, `ImageStyle`, `ImageResponseFormat`, `Image` (Url/B64Json), generation is JSON POST; edit/variation are multipart (deferred) |
-| `src/glaoi/audio.gleam` | `types/audio/audio_.rs`, `form.rs` | Speech: `CreateSpeechRequest` + builder, `Voice`, `SpeechResponseFormat`, `SpeechModel` — JSON POST returning audio bytes. Transcription/translation: multipart (deferred) |
-| `src/glaoi/file.gleam` | `types/files/file.rs`, `form.rs`, `api.rs` | `OpenAIFile`, `ListFilesResponse`, `DeleteFileResponse`, `ListFilesQuery`. Upload is multipart (deferred); list/retrieve/delete/content are JSON |
+| File | Status | What it contains |
+|------|--------|------------------|
+| `src/glaoi/moderation.gleam` | ✅ | `ModerationInput` (String/Array/MultiModal), `ModerationContentPart` (Text/ImageUrl), `ModInputType`, `Categories` (13 bool fields), `CategoryScore` (13 float fields), `CategoryAppliedInputTypes`, `ContentModerationResult`, `CreateModerationRequest` + builder, `CreateModerationResponse` + `create_request/response` — all with encoders + decoders |
+| `src/glaoi/image.gleam` | ✅ | `ImageSize` (8 variants), `ImageModel` (5 named + Other), `ImageQuality` (6 variants), `ImageStyle`, `ImageModeration`, `ImageOutputFormat`, `ImageResponseFormat`, `ImageBackground`, `Image` (Url/B64Json), `ImageGenUsage` + detail types, `ImagesResponse`, `CreateImageRequest` + builder (11 `with_*` fns) + `create_request/response` — all with encoders + decoders. Edit/variation deferred (multipart). |
+| `src/glaoi/audio.gleam` | ✅ | `Voice` (13 built-in + Custom + Other), `SpeechResponseFormat` (6 variants), `SpeechModel` (3 named + Other), `StreamFormat`, `CreateSpeechRequest` + builder (4 `with_*` fns) + `create_speech_request/response` — all with encoders + decoders. Speech returns raw audio bytes. Transcription/translation deferred (multipart). |
+| `src/glaoi/file.gleam` | ✅ | `OpenAiFilePurpose` (8 variants), `OpenAiFile`, `ListFilesResponse`, `DeleteFileResponse` + `list_request/response`, `retrieve_request/response`, `delete_request/response`, `content_request/response` — all with encoders + decoders. Upload deferred (multipart). |
+| `test/glaoi/moderation_test.gleam` | ✅ | 5 tests: string input encoding, multimodal encoding, response decoding, API error, array input encoding |
+| `test/glaoi/image_test.gleam` | ✅ | 7 tests: request encoding with options, minimal request, HTTP request building, URL response decoding, b64 response decoding, usage decoding, API error |
+| `test/glaoi/audio_test.gleam` | ✅ | 6 tests: speech request encoding, minimal encoding, custom voice encoding, HTTP request building, success response, error response |
+| `test/glaoi/file_test.gleam` | ✅ | 10 tests: list/retrieve/delete/content request building, list response decoding, pagination, retrieve with expiry, delete response, content success, content error |
+
+**Stats**: ~4200 lines of Gleam, 62 tests passing, 0 warnings.
+
+#### Examples (Phase 2)
+
+| File | Ports from | Status |
+|------|-----------|--------|
+| `dev/example/moderation.gleam` | `examples/moderations/` | ✅ Single + multi-string moderation |
+| `dev/example/image_generate.gleam` | `examples/image-generate/` + `examples/image-generate-b64-json/` | ✅ URL + base64 response formats |
+| `dev/example/audio_speech.gleam` | `examples/audio-speech/` | ✅ TTS with binary file saving |
+| `dev/example/file_ops.gleam` | File ops from `examples/assistants-*` | ✅ List + retrieve files |
+| `dev/example_file_ffi.erl` | — | ✅ Shared FFI: `write_file/2`, `ensure_directory/1` |
+
+**Not ported** (need streaming types not yet in glaoi):
+- `examples/image-gen-stream/` — image generation streaming events
+- `examples/audio-speech-stream/` — speech streaming events
+
+#### Bug fixes found during example testing
+
+- **`shared.gleam`**: `response_format_json_schema_to_json` was missing the `schema` field, causing structured output requests to fail with `missing_required_parameter`
+- **`chat_store.gleam`**: added 5s sleep before retrieve — API has eventual consistency (same as Rust example's `tokio::time::sleep(5s)`)
+- **`audio_speech.gleam`**: speech endpoint returns raw binary, must use `httpc.send_bits` + `request.map(bit_array.from_string)` instead of `httpc.send` (which rejects non-UTF-8 response bodies)
 
 **Multipart note**: APIs requiring file uploads (audio transcription, image edit/variation, file upload) need a different body type. Options:
 1. Return `Request(BitArray)` with manually-built multipart body + boundary in content-type
 2. Return a `MultipartRequest` record that the user's HTTP client can convert
-3. Defer multipart to Phase 4 and only implement JSON endpoints first
+3. Defer multipart to Phase 5 and only implement JSON endpoints first
 
 ### Phase 3 — Responses API, Fine-tuning, Batch ❌ TODO
 

@@ -47,6 +47,10 @@ pub fn main() -> Nil {
     [] -> Nil
   }
 
+  // The API doesn't return the chat completion immediately, so retrieval
+  // doesn't work right away — sleep briefly before retrieving.
+  sleep(5000)
+
   // Retrieve the stored completion
   io.println("\n--- Retrieve ---")
   let retrieve_req = chat.retrieve_request(cfg, response.id)
@@ -78,3 +82,6 @@ pub fn main() -> Nil {
     },
   )
 }
+
+@external(erlang, "timer", "sleep")
+fn sleep(milliseconds: Int) -> anything

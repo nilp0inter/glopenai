@@ -223,6 +223,11 @@ pub fn response_format_json_schema_to_json(
         schema.description,
         json.string,
       ),
+      codec.optional_field(
+        "schema",
+        schema.schema,
+        codec.dynamic_to_json,
+      ),
       codec.optional_field("strict", schema.strict, json.bool),
     ],
   )
