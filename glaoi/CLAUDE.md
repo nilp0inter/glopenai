@@ -26,6 +26,15 @@ pair of functions:
 Users bring their own HTTP client (httpc, hackney, fetch, etc.) and call it
 between the request and response functions.
 
+Multipart endpoints (file/upload) deviate slightly: they return
+`Request(BitArray)` because file payloads are binary. See **Multipart bodies**
+below.
+
+Some helpers that classically depend on the system clock (e.g.
+`webhook.verify_signature`) take an explicit `now: Int` argument so the
+function stays sans-IO and reproducible. Callers pass
+`erlang:system_time(seconds)` (or whatever clock they trust).
+
 ### Module layout
 
 - **One file per API domain** — all types, encoders, decoders, and
@@ -81,6 +90,13 @@ Follow the Gleam skill strictly. Key rules:
   time. For nested field access, factor out a sub-decoder and use
   `decode.field(outer, sub_decoder())` with a chain of `decode.field` calls
   inside.
+- **`#[serde(flatten)]` on a tagged enum** — the variant's discriminator and
+  payload are spread directly onto the parent JSON object. Decode by reading
+  the parent's other fields first, then chaining `decode.then(child_decoder())`
+  so the child decoder runs against the same root. Example:
+  `chatkit.thread_resource_decoder` decodes `id`/`object`/`created_at`/`title`
+  via `decode.field`, then does `use status <- decode.then(thread_status_decoder())`
+  to consume the flattened `type`/`reason` fields.
 
 ### Gleam gotchas
 
@@ -92,6 +108,57 @@ Follow the Gleam skill strictly. Key rules:
 - **Reserved field-name example**: `completion.CreateCompletionRequest`
   declares `echo_prompt: Option(Bool)` but the encoder writes the field as
   `"echo"` to match the OpenAI wire format.
+
+### Multipart bodies
+
+For endpoints that take binary uploads (`file.create_request`,
+`upload.add_part_request`, future audio transcription / image edit / video
+upload / skill upload / container upload):
+
+- Build via `internal.multipart_request(config, method, path, parts, boundary)`,
+  which returns `Request(BitArray)`.
+- `MultipartPart` has two constructors: `FieldPart(name, value)` for plain
+  text fields and `FilePart(name, filename, content_type, data)` for the
+  bytes payload.
+- `boundary` is a caller-supplied string. Pick a long random or
+  content-derived value; it must not appear inside any part body. Sans-IO
+  callers pass it explicitly so requests are reproducible.
+- For non-string field values, encode to string in the caller (see the
+  `expires_after[anchor]` / `expires_after[seconds]` pattern in
+  `file.create_request`).
+- **Sending side**: use `httpc.send_bits` (not `httpc.send`). It returns
+  `Response(BitArray)`.
+- **Parsing side**: the `*_response` parsers all expect `Response(String)`
+  because OpenAI returns JSON. Convert with a small helper:
+  ```gleam
+  fn bits_response_to_string(
+    resp: response.Response(BitArray),
+  ) -> response.Response(String) {
+    let body = case bit_array.to_string(resp.body) {
+      Ok(s) -> s
+      Error(_) -> ""
+    }
+    response.Response(status: resp.status, headers: resp.headers, body: body)
+  }
+  ```
+  See `dev/example/vector_store_retrieval.gleam` for the full pattern.
+
+### Pagination queries
+
+List endpoints that accept query parameters expose two builders:
+
+- `list_request(config) -> Request(String)` — no query, all defaults.
+- `list_request_with_query(config, query) -> Request(String)` — apply the
+  given `*Query` record.
+
+Each module declares its own `*Query` record (see
+`vector_store.ListVectorStoresQuery`, `chatkit.ListChatKitThreadsQuery`).
+Order/filter enums are also per-module to keep variant names short
+(e.g. `vector_store.Asc`, `chatkit.ThreadsAsc`). Internally each module has
+a private `optional_string_pair` helper plus a `*_query_pairs` function
+that flattens the query into `List(#(String, String))` for
+`request.set_query`. If a third module needs the same shape, promote
+`optional_string_pair` to `internal/codec.gleam`.
 
 ### Streaming (SSE) APIs
 
@@ -191,13 +258,31 @@ for the same conceptual payload. These are the ones we've hit:
 
 `internal.parse_response` handles all three cases automatically.
 
+### FFI modules
+
+Tiny Erlang shims live alongside the Gleam source under `src/`:
+
+- `glaoi_codec_ffi.erl` — `dynamic_to_json/1` (re-encode a decoded `Dynamic`)
+- `glaoi_webhook_ffi.erl` — `hmac_sha256/2`, `base64_encode/1`,
+  `base64_decode/1`. Used by `webhook.gleam`.
+
+Add new FFIs as standalone `glaoi_*_ffi.erl` files. Keep them tiny; do all
+data shaping on the Gleam side.
+
 ## Reference
 
 The Rust source of truth is in `../async-openai/src/`. Key locations:
 
-- Types: `async-openai/src/types/<module>/`
-- Config: `async-openai/src/config.rs`
-- Errors: `async-openai/src/error.rs`
-- API implementations: `async-openai/src/<module>.rs`
+- Types: `../async-openai/src/types/<module>/`
+- Config: `../async-openai/src/config.rs`
+- Errors: `../async-openai/src/error.rs`
+- API implementations: `../async-openai/src/<module>.rs`
+
+**Repo layout gotcha**: example code (and example fixtures like the
+vector-store-retrieval PDFs) lives at `../examples/`, **not** under
+`../async-openai/examples/`. The `async-openai/` directory is the Rust
+library crate only. Relative paths from a glaoi example file should target
+`../examples/...` if you need them — but prefer copying fixtures into
+`dev/example/input/<example-name>/` so glaoi stays self-contained.
 
 See `PLAN.md` for the full implementation roadmap and status.

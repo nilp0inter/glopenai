@@ -1,3 +1,4 @@
+import gleam/bit_array
 import gleam/http
 import gleam/http/response
 import gleam/option.{None, Some}
@@ -103,4 +104,50 @@ pub fn content_response_error_test() {
   let resp = response.new(404) |> response.set_body(body)
 
   let assert Error(_) = file.content_response(resp)
+}
+
+pub fn create_request_multipart_test() {
+  let cfg = config.new("test-key")
+  let req =
+    file.create_request(
+      cfg,
+      file.new_create_request(
+        "data.jsonl",
+        bit_array.from_string("hello"),
+        file.FineTune,
+      ),
+      "BNDRY",
+    )
+  assert req.method == http.Post
+  let assert True = string.contains(req.path, "/files")
+  let assert Ok(body) = bit_array.to_string(req.body)
+  let assert True = string.contains(body, "name=\"file\"")
+  let assert True = string.contains(body, "filename=\"data.jsonl\"")
+  let assert True = string.contains(body, "Content-Type: application/jsonl")
+  let assert True = string.contains(body, "name=\"purpose\"")
+  let assert True = string.contains(body, "fine-tune")
+  let assert True = string.contains(body, "--BNDRY--\r\n")
+}
+
+pub fn create_request_with_expires_after_test() {
+  let cfg = config.new("test-key")
+  let req =
+    file.create_request(
+      cfg,
+      file.new_create_request(
+        "x.txt",
+        bit_array.from_string("data"),
+        file.UserData,
+      )
+        |> file.with_expires_after(file.FileExpirationAfter(
+          anchor: file.CreatedAt,
+          seconds: 3600,
+        )),
+      "BNDRY",
+    )
+  let assert Ok(body) = bit_array.to_string(req.body)
+  let assert True = string.contains(body, "name=\"expires_after[anchor]\"")
+  let assert True = string.contains(body, "created_at")
+  let assert True = string.contains(body, "name=\"expires_after[seconds]\"")
+  let assert True = string.contains(body, "3600")
 }

@@ -1,8 +1,10 @@
+import gleam/bit_array
 import gleam/dynamic/decode
 import gleam/http
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/json
+import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/uri
 import glaoi/config.{type AzureConfig, type Config}
@@ -53,6 +55,88 @@ pub fn azure_delete_request(
 ) -> Request(String) {
   build_azure_request(config, http.Delete, path)
   |> request.set_body("")
+}
+
+// --- Multipart helpers ---
+
+/// One part of a `multipart/form-data` body.
+pub type MultipartPart {
+  /// A regular form field. Encoded as text without an explicit content type.
+  FieldPart(name: String, value: String)
+  /// A file upload. `data` carries the raw bytes; `content_type` becomes the
+  /// part's `Content-Type` header.
+  FilePart(
+    name: String,
+    filename: String,
+    content_type: String,
+    data: BitArray,
+  )
+}
+
+/// Build a `multipart/form-data` request. Returns `Request(BitArray)` because
+/// file parts may carry arbitrary binary content.
+///
+/// `boundary` must not appear inside any part's body. Pick a long random string
+/// or a deterministic hash. Sans-IO clients pass it explicitly so the request
+/// is reproducible.
+pub fn multipart_request(
+  config: Config,
+  method: http.Method,
+  path: String,
+  parts: List(MultipartPart),
+  boundary: String,
+) -> Request(BitArray) {
+  let body = build_multipart_body(parts, boundary)
+  build_request(config, method, path)
+  |> request.set_body(body)
+  |> request.prepend_header(
+    "content-type",
+    "multipart/form-data; boundary=" <> boundary,
+  )
+}
+
+/// Encode a list of `MultipartPart`s into a single `BitArray` body using the
+/// given boundary. Public for tests and for callers that need to handle the
+/// body separately from the request envelope.
+pub fn build_multipart_body(
+  parts: List(MultipartPart),
+  boundary: String,
+) -> BitArray {
+  let dash_boundary = bit_array.from_string("--" <> boundary <> "\r\n")
+  let crlf = bit_array.from_string("\r\n")
+  let parts_bytes =
+    list.fold(parts, <<>>, fn(acc, part) {
+      let header = bit_array.from_string(part_header(part))
+      let payload = part_body(part)
+      bit_array.concat([acc, dash_boundary, header, payload, crlf])
+    })
+  let closing =
+    bit_array.from_string("--" <> boundary <> "--\r\n")
+  bit_array.concat([parts_bytes, closing])
+}
+
+fn part_header(part: MultipartPart) -> String {
+  case part {
+    FieldPart(name, _) ->
+      "Content-Disposition: form-data; name=\""
+      <> name
+      <> "\"\r\n\r\n"
+    FilePart(name, filename, content_type, _) ->
+      "Content-Disposition: form-data; name=\""
+      <> name
+      <> "\"; filename=\""
+      <> filename
+      <> "\"\r\nContent-Type: "
+      <> content_type
+      <> "\r\n\r\n"
+  }
+}
+
+fn part_body(part: MultipartPart) -> BitArray {
+  case part {
+    FieldPart(_, value) -> bit_array.from_string(value)
+    FilePart(_, _, _, data) -> data
+  }
 }
 
 /// Parse an HTTP response, decoding the body as JSON on success (2xx)

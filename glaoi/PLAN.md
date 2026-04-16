@@ -91,7 +91,7 @@ Each module follows the same pattern: types + encoders + decoders + request/resp
 | `src/glaoi/moderation.gleam` | ✅ | `ModerationInput` (String/Array/MultiModal), `ModerationContentPart` (Text/ImageUrl), `ModInputType`, `Categories` (13 bool fields), `CategoryScore` (13 float fields), `CategoryAppliedInputTypes`, `ContentModerationResult`, `CreateModerationRequest` + builder, `CreateModerationResponse` + `create_request/response` — all with encoders + decoders |
 | `src/glaoi/image.gleam` | ✅ | `ImageSize` (8 variants), `ImageModel` (5 named + Other), `ImageQuality` (6 variants), `ImageStyle`, `ImageModeration`, `ImageOutputFormat`, `ImageResponseFormat`, `ImageBackground`, `Image` (Url/B64Json), `ImageGenUsage` + detail types, `ImagesResponse`, `CreateImageRequest` + builder (11 `with_*` fns) + `create_request/response` — all with encoders + decoders. Edit/variation deferred (multipart). |
 | `src/glaoi/audio.gleam` | ✅ | `Voice` (13 built-in + Custom + Other), `SpeechResponseFormat` (6 variants), `SpeechModel` (3 named + Other), `StreamFormat`, `CreateSpeechRequest` + builder (4 `with_*` fns) + `create_speech_request/response` — all with encoders + decoders. Speech returns raw audio bytes. Transcription/translation deferred (multipart). |
-| `src/glaoi/file.gleam` | ✅ | `OpenAiFilePurpose` (8 variants), `OpenAiFile`, `ListFilesResponse`, `DeleteFileResponse` + `list_request/response`, `retrieve_request/response`, `delete_request/response`, `content_request/response` — all with encoders + decoders. Upload deferred (multipart). |
+| `src/glaoi/file.gleam` | ✅ | `OpenAiFilePurpose` (8 variants), `OpenAiFile`, `FileExpirationAfter`/`FileExpirationAfterAnchor` (added Phase 4), `CreateFileRequest` + builder + `create_request/response` (multipart, added Phase 4), `ListFilesResponse`, `DeleteFileResponse` + `list_request/response`, `retrieve_request/response`, `delete_request/response`, `content_request/response` — all with encoders + decoders. |
 | `test/glaoi/moderation_test.gleam` | ✅ | 5 tests: string input encoding, multimodal encoding, response decoding, API error, array input encoding |
 | `test/glaoi/image_test.gleam` | ✅ | 7 tests: request encoding with options, minimal request, HTTP request building, URL response decoding, b64 response decoding, usage decoding, API error |
 | `test/glaoi/audio_test.gleam` | ✅ | 6 tests: speech request encoding, minimal encoding, custom voice encoding, HTTP request building, success response, error response |
@@ -119,10 +119,11 @@ Each module follows the same pattern: types + encoders + decoders + request/resp
 - **`chat_store.gleam`**: added 5s sleep before retrieve — API has eventual consistency (same as Rust example's `tokio::time::sleep(5s)`)
 - **`audio_speech.gleam`**: speech endpoint returns raw binary, must use `httpc.send_bits` + `request.map(bit_array.from_string)` instead of `httpc.send` (which rejects non-UTF-8 response bodies)
 
-**Multipart note**: APIs requiring file uploads (audio transcription, image edit/variation, file upload) need a different body type. Options:
-1. Return `Request(BitArray)` with manually-built multipart body + boundary in content-type
-2. Return a `MultipartRequest` record that the user's HTTP client can convert
-3. Defer multipart to Phase 5 and only implement JSON endpoints first
+**Multipart note**: resolved in Phase 4. `internal.multipart_request` returns
+`Request(BitArray)` with a caller-supplied boundary; see CLAUDE.md
+"Multipart bodies" for usage. Still deferred (need the same pattern):
+audio transcription/translation, image edit/variation, video upload, skill
+upload, container upload.
 
 ### Phase 3 — Responses API, Fine-tuning, Batch, Completion ✅ DONE
 
@@ -159,31 +160,66 @@ Each module follows the same pattern: types + encoders + decoders + request/resp
 
 - **`response.gleam`**: `text.format` with `json_schema` in the Responses API flattens the schema fields (`name`, `description`, `schema`, `strict`) alongside the type tag. The initial implementation wrongly wrapped them under a `json_schema` key (the shape used by the older Chat Completions API), causing `missing_required_parameter: 'text.format.name'`. Fixed both encoder and decoder.
 
-### Phase 4 — Remaining APIs ❌ TODO
+### Phase 4 — Remaining APIs (partial)
 
-| Module | Rust reference | Notes |
-|--------|---------------|-------|
-| `src/glaoi/upload.gleam` | `types/uploads/` | Chunked file uploads: create, add part, complete, cancel |
-| `src/glaoi/vector_store.gleam` | `types/vectorstores/` | Vector stores + files + file batches |
-| `src/glaoi/assistant.gleam` | `types/assistants/` | Deprecated but still used: assistants, threads, runs, messages, steps |
-| `src/glaoi/video.gleam` | `types/videos/` | Video generation (Sora): create, edit, extend, remix |
-| `src/glaoi/container.gleam` | `types/containers/` | Container management |
-| `src/glaoi/skill.gleam` | `types/skills/` | Skill definitions |
-| `src/glaoi/chatkit.gleam` | `types/chatkit/` | Chat kit sessions/threads |
-| `src/glaoi/eval.gleam` | `types/evals/` | Evaluation framework |
-| `src/glaoi/admin.gleam` | `types/admin/` (many subdirs) | Administration: users, projects, API keys, audit logs, invites, roles, usage, certificates, groups, rate limits, service accounts |
-| `src/glaoi/realtime.gleam` | `types/realtime/` | WebSocket real-time API: client/server events, session management. Needs different transport abstraction (not HTTP request/response). |
-| `src/glaoi/webhook.gleam` | `types/webhooks/` | Webhook signature verification |
+| Module | Rust reference | Status |
+|--------|---------------|--------|
+| `src/glaoi/webhook.gleam` | `types/webhooks/` | ✅ 15 event types, HMAC-SHA256 verification, build_event |
+| `src/glaoi/vector_store.gleam` | `types/vectorstores/` | ✅ Stores + files + batches + search (16 endpoints, Filter, ChunkingStrategy, AttributeValue, paginated queries) |
+| `src/glaoi/chatkit.gleam` | `types/chatkit/` | ✅ Sessions + threads + items (6 endpoints, ThreadItem 6-variant union, flattened ThreadStatus) |
+| `src/glaoi/upload.gleam` | `types/uploads/` | ✅ create / add_part (multipart) / complete / cancel |
+| `src/glaoi/assistant.gleam` | `types/assistants/` | ❌ TODO — Deprecated but still used: assistants, threads, runs, messages, steps |
+| `src/glaoi/video.gleam` | `types/videos/` | ❌ TODO — Video generation (Sora): create, edit, extend, remix |
+| `src/glaoi/container.gleam` | `types/containers/` | ❌ TODO — Container management |
+| `src/glaoi/skill.gleam` | `types/skills/` | ❌ TODO — Skill definitions |
+| `src/glaoi/eval.gleam` | `types/evals/` | ❌ TODO — Evaluation framework |
+| `src/glaoi/admin.gleam` | `types/admin/` (many subdirs) | ❌ TODO — Administration: users, projects, API keys, audit logs, invites, roles, usage, certificates, groups, rate limits, service accounts |
+| `src/glaoi/realtime.gleam` | `types/realtime/` | ❌ TODO — WebSocket real-time API: client/server events, session management. Needs different transport abstraction (not HTTP request/response). |
 
-### Phase 5 — Cross-cutting concerns ❌ TODO
+#### Phase 4 progress notes
 
-| Feature | Notes |
-|---------|-------|
-| **Multipart support** | Define a `MultipartPart` type and `build_multipart_request` helper. Needed by: audio transcription/translation, image edit/variation, file upload, video upload, skill upload, container upload |
-| **SSE streaming helpers** | `parse_sse_line(line: String) -> SseEvent` to help users parse raw SSE from their HTTP client. Already have `chat.parse_stream_chunk` as a model. |
-| **Query parameter encoding** | `ListFilesQuery`, `ListChatCompletionsQuery`, etc. need URL query encoding via `serde_urlencoded` equivalent. Use `request.set_query` with key-value pairs. |
-| **Retry guidance** | Document recommended retry strategy (exponential backoff, retry on 429/5xx, not on insufficient_quota). This is user-side since we're sans-IO. |
-| **BYOT (Bring Your Own Types)** | Allow passing `Dynamic` / raw JSON instead of typed requests. Low priority — the typed API is the main value. |
+**Multipart support** landed alongside `upload.gleam`. `internal.gleam`
+exposes `MultipartPart` (FieldPart + FilePart) and
+`multipart_request(config, method, path, parts, boundary) -> Request(BitArray)`.
+Callers pass an explicit boundary so requests stay reproducible.
+
+**Webhook verification** lives in pure Gleam plus a 3-function Erlang FFI
+(`glaoi_webhook_ffi.erl`) for HMAC-SHA256 + base64. `verify_signature` takes
+an explicit `now: Int` so the function is sans-IO.
+
+**Pagination queries**: `vector_store` and `chatkit` introduced a per-module
+`*Query` record type and a `*_request_with_query` variant of each list
+endpoint. Each module currently inlines its own `optional_string_pair`
+helper — could be promoted to `internal/codec.gleam` if a third module
+needs it.
+
+**File upload** (`file.create_request`/`file.create_response`) was previously
+deferred but landed alongside the multipart helper. It builds a multipart
+request and returns `Request(BitArray)`; callers send it with
+`httpc.send_bits` and convert the JSON response body back to `String` for
+the parser. The `file.guess_content_type` helper picks a sensible
+`Content-Type` from the filename suffix.
+
+**Cumulative stats** (after webhook + vector_store + chatkit + upload + file
+upload + 3 new examples): 181 tests passing, 0 warnings.
+
+#### Examples (Phase 4)
+
+| File | Ports from | Status |
+|------|-----------|--------|
+| `dev/example/webhook_verify.gleam` | `examples/webhooks/` | ✅ Self-contained: synthesises a signed payload locally, then verifies + parses it. The Rust example needed Axum + ngrok + dashboard config; this version exercises the API surface end-to-end without a server. |
+| `dev/example/vector_store_retrieval.gleam` | `examples/vector-store-retrieval/` | ✅ Uploads two PDFs (multipart!) → creates vector store → polls until ready → searches "uber profit" → cleans up. Verified live against the real API. PDF fixtures committed under `dev/example/input/vector_store_retrieval/` so the example is self-contained. |
+| `dev/example/chatkit.gleam` | `examples/chatkit/` | ✅ Reads `CHATKIT_WORKFLOW_ID`, sets the `OpenAI-Beta: chatkit_beta=v1` header, creates and cancels a session. Verified live. |
+
+### Phase 5 — Cross-cutting concerns
+
+| Feature | Status |
+|---------|--------|
+| **Multipart support** | ✅ landed in Phase 4 — `internal.MultipartPart` + `internal.multipart_request`. Used by `file.create_request` and `upload.add_part_request`. |
+| **Query parameter encoding** | ✅ partial — per-module `*Query` records + `*_request_with_query` builders for vector_store and chatkit list endpoints. `optional_string_pair` helper is currently inlined per module; promote to `internal/codec.gleam` if a 3rd module needs it. Existing list endpoints in older modules (file, chat completions) don't yet have query variants. |
+| **SSE streaming helpers** | ❌ TODO — `parse_sse_line(line: String) -> SseEvent` to help users parse raw SSE. Already have `chat.parse_stream_chunk` and `response.parse_stream_event` as per-module decoders. |
+| **Retry guidance** | ❌ TODO — Document recommended retry strategy (exponential backoff, retry on 429/5xx, not on insufficient_quota). User-side since sans-IO. |
+| **BYOT (Bring Your Own Types)** | ❌ TODO — Allow passing `Dynamic` / raw JSON instead of typed requests. Low priority. |
 
 ---
 
@@ -194,7 +230,7 @@ Each module follows the same pattern: types + encoders + decoders + request/resp
 | `types/mcp/` | Model Context Protocol — niche, internal to OpenAI |
 | `types/graders/` | Tightly coupled with evals, port with evals if needed |
 | `types/shared/custom_grammar_format_param.rs` | Custom grammar format — niche feature, add when needed |
-| `types/shared/filter.rs` | Vector store filters — port with vector stores |
+| ~~`types/shared/filter.rs`~~ | ✅ Ported in Phase 4 as `vector_store.Filter` (kept module-local rather than promoting to `shared.gleam` — only one consumer so far) |
 | `types/shared/transcription_usage.rs` | Port with audio module |
 | `types/input_source.rs` | File/URL/bytes abstraction — Rust-specific, not needed in Gleam |
 | `types/impls.rs` | Rust trait implementations (From, Into) — not applicable |
@@ -208,12 +244,16 @@ Each module follows the same pattern: types + encoders + decoders + request/resp
 glaoi/
   gleam.toml
   PLAN.md
+  CLAUDE.md
   src/
     glaoi.gleam                    # Re-exports
+    glaoi_codec_ffi.erl            # Erlang FFI: dynamic_to_json
+    glaoi_webhook_ffi.erl          # Erlang FFI: HMAC-SHA256 + base64 (Phase 4)
     glaoi/
       config.gleam                 # Config + AzureConfig
       error.gleam                  # ApiError, GlaoiError
-      internal.gleam               # Request building, response parsing
+      internal.gleam               # Request building, response parsing,
+                                   # multipart helper (Phase 4)
       internal/
         codec.gleam                # JSON encoding helpers
       shared.gleam                 # Cross-module types
@@ -225,31 +265,34 @@ glaoi/
       image.gleam                  # Image generation API     (Phase 2)
       audio.gleam                  # Audio API                (Phase 2)
       file.gleam                   # Files API                (Phase 2)
+                                   # — upload added Phase 4 (multipart)
       response.gleam               # Responses API            (Phase 3)
       fine_tuning.gleam            # Fine-tuning API          (Phase 3)
       batch.gleam                  # Batch API                (Phase 3)
       completion.gleam             # Legacy completions       (Phase 3)
-      upload.gleam                 # Uploads API              (Phase 4)
-      vector_store.gleam           # Vector stores API        (Phase 4)
-      assistant.gleam              # Assistants API           (Phase 4)
-      video.gleam                  # Video API                (Phase 4)
-      container.gleam              # Containers API           (Phase 4)
-      skill.gleam                  # Skills API               (Phase 4)
-      chatkit.gleam                # ChatKit API              (Phase 4)
-      eval.gleam                   # Evals API                (Phase 4)
-      admin.gleam                  # Administration API       (Phase 4)
-      realtime.gleam               # Realtime WebSocket API   (Phase 4)
-      webhook.gleam                # Webhook verification     (Phase 4)
+      upload.gleam                 # Uploads API              (Phase 4 ✅)
+      vector_store.gleam           # Vector stores API        (Phase 4 ✅)
+      chatkit.gleam                # ChatKit API              (Phase 4 ✅)
+      webhook.gleam                # Webhook verification     (Phase 4 ✅)
+      assistant.gleam              # Assistants API           (Phase 4 TODO)
+      video.gleam                  # Video API                (Phase 4 TODO)
+      container.gleam              # Containers API           (Phase 4 TODO)
+      skill.gleam                  # Skills API               (Phase 4 TODO)
+      eval.gleam                   # Evals API                (Phase 4 TODO)
+      admin.gleam                  # Administration API       (Phase 4 TODO)
+      realtime.gleam               # Realtime WebSocket API   (Phase 4 TODO)
   test/
     glaoi_test.gleam
     glaoi/
-      config_test.gleam
-      model_test.gleam
-      embedding_test.gleam
-      chat_test.gleam
-      moderation_test.gleam        # (Phase 2)
-      image_test.gleam             # (Phase 2)
-      audio_test.gleam             # (Phase 2)
-      file_test.gleam              # (Phase 2)
-      ...                          # (Phase 3+)
+      <one *_test.gleam per src/glaoi/*.gleam module>
+  dev/
+    example_env_ffi.erl            # FFI: getenv
+    example_file_ffi.erl           # FFI: read_file/write_file/sleep_ms
+    example/
+      <one *.gleam per ported Rust example>
+      env.gleam                    # Shared: get_api_key, get_env_var
+      input/
+        vector_store_retrieval/    # PDF fixtures committed for self-contained runs
+          uber-10k.pdf
+          lyft-10k.pdf
 ```

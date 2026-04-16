@@ -1,11 +1,13 @@
-/// Files API: list, retrieve, delete, and download files.
-/// File upload requires multipart and is deferred.
+/// Files API: upload, list, retrieve, delete, and download files.
 
+import gleam/bit_array
 import gleam/dynamic/decode
+import gleam/http
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
+import gleam/int
 import gleam/json
-import gleam/option.{type Option, None}
+import gleam/option.{type Option, None, Some}
 import glaoi/config.{type Config}
 import glaoi/error.{type GlaoiError}
 import glaoi/internal
@@ -35,6 +37,49 @@ pub type OpenAiFile {
     filename: String,
     purpose: OpenAiFilePurpose,
   )
+}
+
+/// Anchor timestamp for `FileExpirationAfter`. Currently only `created_at`.
+pub type FileExpirationAfterAnchor {
+  CreatedAt
+}
+
+pub fn file_expiration_after_anchor_to_json(
+  anchor: FileExpirationAfterAnchor,
+) -> json.Json {
+  json.string(case anchor {
+    CreatedAt -> "created_at"
+  })
+}
+
+pub fn file_expiration_after_anchor_decoder() -> decode.Decoder(
+  FileExpirationAfterAnchor,
+) {
+  use value <- decode.then(decode.string)
+  case value {
+    "created_at" -> decode.success(CreatedAt)
+    _ -> decode.failure(CreatedAt, "FileExpirationAfterAnchor")
+  }
+}
+
+/// Expiration policy for an uploaded file.
+pub type FileExpirationAfter {
+  FileExpirationAfter(anchor: FileExpirationAfterAnchor, seconds: Int)
+}
+
+pub fn file_expiration_after_to_json(
+  expiration: FileExpirationAfter,
+) -> json.Json {
+  json.object([
+    #("anchor", file_expiration_after_anchor_to_json(expiration.anchor)),
+    #("seconds", json.int(expiration.seconds)),
+  ])
+}
+
+pub fn file_expiration_after_decoder() -> decode.Decoder(FileExpirationAfter) {
+  use anchor <- decode.field("anchor", file_expiration_after_anchor_decoder())
+  use seconds <- decode.field("seconds", decode.int)
+  decode.success(FileExpirationAfter(anchor: anchor, seconds: seconds))
 }
 
 /// Response from listing files.
@@ -154,6 +199,142 @@ fn delete_file_response_decoder() -> decode.Decoder(DeleteFileResponse) {
     object: object,
     deleted: deleted,
   ))
+}
+
+// --- File upload ---
+
+/// Parameters for uploading a file. The body is sent as `multipart/form-data`.
+pub type CreateFileRequest {
+  CreateFileRequest(
+    /// Name attached to the multipart `file` part. Usually the original
+    /// filename (e.g. `"data.jsonl"`).
+    filename: String,
+    /// Raw file bytes.
+    file_bytes: BitArray,
+    /// What the file will be used for.
+    purpose: OpenAiFilePurpose,
+    expires_after: Option(FileExpirationAfter),
+  )
+}
+
+pub fn new_create_request(
+  filename: String,
+  file_bytes: BitArray,
+  purpose: OpenAiFilePurpose,
+) -> CreateFileRequest {
+  CreateFileRequest(
+    filename: filename,
+    file_bytes: file_bytes,
+    purpose: purpose,
+    expires_after: None,
+  )
+}
+
+pub fn with_expires_after(
+  request: CreateFileRequest,
+  expires_after: FileExpirationAfter,
+) -> CreateFileRequest {
+  CreateFileRequest(..request, expires_after: Some(expires_after))
+}
+
+/// Build a `POST /files` multipart request. The caller chooses `boundary`;
+/// it must not appear inside `request.file_bytes`.
+pub fn create_request(
+  config: Config,
+  request: CreateFileRequest,
+  boundary: String,
+) -> Request(BitArray) {
+  // The OpenAI files endpoint expects three parts: file, purpose, and
+  // optionally expires_after as a serialized JSON-ish form (anchor + seconds
+  // are flattened to two fields per the multipart convention).
+  let base_parts = [
+    internal.FilePart(
+      name: "file",
+      filename: request.filename,
+      content_type: guess_content_type(request.filename),
+      data: request.file_bytes,
+    ),
+    internal.FieldPart(
+      name: "purpose",
+      value: openai_file_purpose_to_string(request.purpose),
+    ),
+  ]
+  let parts = case request.expires_after {
+    None -> base_parts
+    Some(expires) -> [
+      internal.FieldPart(
+        name: "expires_after[anchor]",
+        value: case expires.anchor {
+          CreatedAt -> "created_at"
+        },
+      ),
+      internal.FieldPart(
+        name: "expires_after[seconds]",
+        value: int.to_string(expires.seconds),
+      ),
+      ..base_parts
+    ]
+  }
+  internal.multipart_request(config, http.Post, "/files", parts, boundary)
+}
+
+pub fn create_response(
+  response: Response(String),
+) -> Result(OpenAiFile, GlaoiError) {
+  internal.parse_response(response, openai_file_decoder())
+}
+
+/// Best-effort `Content-Type` guess from the filename extension. The OpenAI
+/// API does not strictly enforce this for files, but a sensible value avoids
+/// confusing logs and proxies.
+fn guess_content_type(filename: String) -> String {
+  case bit_array.from_string(filename) {
+    _ ->
+      case ends_with(filename, ".pdf") {
+        True -> "application/pdf"
+        False ->
+          case ends_with(filename, ".jsonl") {
+            True -> "application/jsonl"
+            False ->
+              case ends_with(filename, ".json") {
+                True -> "application/json"
+                False ->
+                  case ends_with(filename, ".txt") {
+                    True -> "text/plain"
+                    False -> "application/octet-stream"
+                  }
+              }
+          }
+      }
+  }
+}
+
+fn ends_with(haystack: String, needle: String) -> Bool {
+  let h = bit_array.from_string(haystack)
+  let n = bit_array.from_string(needle)
+  let h_size = bit_array.byte_size(h)
+  let n_size = bit_array.byte_size(n)
+  case h_size >= n_size {
+    False -> False
+    True ->
+      case bit_array.slice(h, h_size - n_size, n_size) {
+        Ok(suffix) -> suffix == n
+        Error(_) -> False
+      }
+  }
+}
+
+fn openai_file_purpose_to_string(purpose: OpenAiFilePurpose) -> String {
+  case purpose {
+    Assistants -> "assistants"
+    AssistantsOutput -> "assistants_output"
+    Batch -> "batch"
+    BatchOutput -> "batch_output"
+    FineTune -> "fine-tune"
+    FineTuneResults -> "fine-tune-results"
+    Vision -> "vision"
+    UserData -> "user_data"
+  }
 }
 
 // --- Request/Response pairs (sans-io) ---

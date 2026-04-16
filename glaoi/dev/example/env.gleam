@@ -13,5 +13,10 @@ pub fn get_api_key() -> String {
   }
 }
 
+/// Read an arbitrary environment variable. Returns `Error(Nil)` when unset.
+pub fn get_env_var(name: String) -> Result(String, Nil) {
+  get_env(name)
+}
+
 @external(erlang, "example_env_ffi", "get_env")
 fn get_env(name: String) -> Result(String, Nil)
