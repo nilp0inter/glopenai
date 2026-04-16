@@ -124,14 +124,40 @@ Each module follows the same pattern: types + encoders + decoders + request/resp
 2. Return a `MultipartRequest` record that the user's HTTP client can convert
 3. Defer multipart to Phase 5 and only implement JSON endpoints first
 
-### Phase 3 — Responses API, Fine-tuning, Batch ❌ TODO
+### Phase 3 — Responses API, Fine-tuning, Batch, Completion ✅ DONE
 
-| Module | Rust reference | Notes |
-|--------|---------------|-------|
-| `src/glaoi/response.gleam` | `types/responses/` (many files) | The newer unified Responses API. Very large type surface: `Response`, `InputItem` (20+ variants), `OutputContent` (15+ variants), `ResponseStreamEvent` (60+ event types). This is the biggest single module. |
-| `src/glaoi/fine_tuning.gleam` | `types/finetuning/fine_tuning.rs` | Fine-tuning jobs: create, list, retrieve, cancel, list events, list checkpoints |
-| `src/glaoi/batch.gleam` | `types/batches/batch.rs`, `api.rs` | Batch API: create, retrieve, cancel, list |
-| `src/glaoi/completion.gleam` | `types/completions/completion.rs` | Legacy completions API (simple, low priority) |
+Each module follows the same pattern: types + encoders + decoders + request/response pairs.
+
+| File | Status | What it contains |
+|------|--------|------------------|
+| `src/glaoi/response.gleam` | ✅ | Full Responses API — `CreateResponse` + builder (20 `with_*` fns), `Response` type, `InputParam`/`InputItem`/`Item` (25 variants), `OutputItem` (20 variants), `Tool` (17 variants), `ToolChoiceParam`, `ResponseStreamEvent` (48 stream event variants), content types, annotations, computer actions, web search actions, MCP types, shell/apply-patch types, reasoning, compaction, `DeleteResponse`, `ResponseItemList`, `TokenCountsResource`, `CompactResource` — all with encoders + decoders + `parse_stream_event` |
+| `src/glaoi/fine_tuning.gleam` | ✅ | Fine-tuning jobs API — `NEpochs`/`BatchSize`/`LearningRateMultiplier`/`Beta`/`ComputeMultiplier`/`EvalInterval`/`EvalSamples` (auto-or-value enums), `FineTuneSupervisedHyperparameters`/`FineTuneDpoHyperparameters`/`FineTuneReinforcementHyperparameters`, `FineTuneMethod` (Supervised/Dpo/Reinforcement), `FineTuneGrader` (5 grader types), `CreateFineTuningJobRequest` + builder, `FineTuningJob`, events, checkpoints, checkpoint permissions — 11 endpoints, all with encoders + decoders |
+| `src/glaoi/batch.gleam` | ✅ | Batch API — `BatchEndpoint` (5 variants), `BatchStatus` (8 variants), `BatchRequest` + builder, `Batch`, `BatchErrors`, `BatchRequestCounts`, `ListBatchesResponse`, `BatchRequestInput`/`BatchRequestOutput` (JSONL helpers) — create/retrieve/cancel/list endpoints, all with encoders + decoders |
+| `src/glaoi/completion.gleam` | ✅ | Legacy completions API — `Prompt` (4 variants), `StopConfiguration`, `CompletionFinishReason`, `Logprobs`, `CompletionChoice`, `CreateCompletionRequest` + builder (15 `with_*` fns), `CreateCompletionResponse` — create endpoint, all with encoders + decoders |
+| `test/glaoi/response_test.gleam` | ✅ | 18 tests: request encoding, request building, HTTP method/path, response decoding (message, function_call, reasoning, usage), delete response, API error, 5 stream event tests, tool encoding, include enum encoding |
+| `test/glaoi/fine_tuning_test.gleam` | ✅ | 10 tests: request encoding, request/retrieve/cancel building, job decoding, method decoding, list jobs, events, API error, method encoding, checkpoint permission path |
+| `test/glaoi/batch_test.gleam` | ✅ | 10 tests: request encoding, request/retrieve/cancel building, batch response, list response, errors, API error, request input/output decoding |
+| `test/glaoi/completion_test.gleam` | ✅ | 6 tests: request encoding, array prompt, request building, response decoding, API error, stop configuration |
+
+**Stats (cumulative, end of Phase 3)**: ~14,800 lines of Gleam total
+(~10,700 src, ~1,400 tests, ~1,500 dev examples, remainder FFI/config),
+108 tests passing, 0 warnings.
+
+#### Examples (Phase 3)
+
+| File | Ports from | Status |
+|------|-----------|--------|
+| `dev/example/completion.gleam` | `examples/completions/` | ✅ Single + multi-prompt |
+| `dev/example/response.gleam` | `examples/responses/` | ✅ Responses API with web search tool |
+| `dev/example/response_function_call.gleam` | `examples/responses-function-call/` | ✅ Non-streaming function calling |
+| `dev/example/response_stream.gleam` | `examples/responses-stream/` | ✅ SSE parsing with buffered body |
+| `dev/example/response_structured_outputs.gleam` | `examples/responses-structured-outputs/` | ✅ JSON schema output (chain-of-thought) |
+
+**Not ported** (Rust lacks a reference example): `batch`, `fine_tuning`. These modules have full unit-test coverage but no runnable example in the upstream repo.
+
+#### Bug fixes found during example testing
+
+- **`response.gleam`**: `text.format` with `json_schema` in the Responses API flattens the schema fields (`name`, `description`, `schema`, `strict`) alongside the type tag. The initial implementation wrongly wrapped them under a `json_schema` key (the shape used by the older Chat Completions API), causing `missing_required_parameter: 'text.format.name'`. Fixed both encoder and decoder.
 
 ### Phase 4 — Remaining APIs ❌ TODO
 

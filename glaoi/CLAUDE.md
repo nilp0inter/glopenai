@@ -76,6 +76,98 @@ Follow the Gleam skill strictly. Key rules:
 - Tagged enums (`#[serde(tag = "type")]`): read the tag field, then `case` dispatch
 - Untagged enums (`#[serde(untagged)]`): use `decode.one_of`
 - String enums (`#[serde(rename_all)]`): `case` on the string value
+- **`decode.at(path, decoder)` can't be used with `use <-`** — it takes exactly
+  two arguments, so `use x <- decode.at(["a", "b"], decoder)` fails at compile
+  time. For nested field access, factor out a sub-decoder and use
+  `decode.field(outer, sub_decoder())` with a chain of `decode.field` calls
+  inside.
+
+### Gleam gotchas
+
+- **Reserved keywords** — `echo` and `type` are Gleam keywords and cannot be
+  used as record field names. When a Rust field uses one of these names, rename
+  it (e.g. `echo` → `echo_prompt`, `type` → `item_type`/`message_type`) and
+  map back to the original wire name in the encoder/decoder. Leave a comment
+  explaining the rename.
+- **Reserved field-name example**: `completion.CreateCompletionRequest`
+  declares `echo_prompt: Option(Bool)` but the encoder writes the field as
+  `"echo"` to match the OpenAI wire format.
+
+### Streaming (SSE) APIs
+
+The Responses and Chat Completions APIs support server-sent events. glaoi
+exposes a single sans-io helper per module:
+
+- `chat.parse_stream_chunk(data: String) -> Result(Option(CreateChatCompletionStreamResponse), GlaoiError)`
+- `response.parse_stream_event(data: String) -> Result(Option(ResponseStreamEvent), GlaoiError)`
+
+Both return `Ok(None)` for the literal `[DONE]` sentinel line and `Ok(Some(_))`
+for a parsed data payload. The user is responsible for reading the HTTP body
+as a stream, splitting it on blank lines, and stripping the `data: ` prefix
+before passing each payload to the parser. See `dev/example/response_stream.gleam`
+for a reference implementation (buffered-body variant).
+
+### POST endpoints with empty bodies
+
+Some endpoints (cancel, pause, resume) require a POST with an empty JSON
+object as the body. Use `json.object([])`:
+
+```gleam
+internal.post_request(
+  config,
+  "/fine_tuning/jobs/" <> job_id <> "/cancel",
+  json.object([]),
+)
+```
+
+### Module naming and import collisions
+
+`glaoi/response.gleam` declares a `Response` type. Callers that also import
+`gleam/http/response` should alias one of them:
+
+```gleam
+import gleam/http/response
+import glaoi/response as resp
+
+pub fn handle(http_resp: response.Response(String)) {
+  resp.create_response_response(http_resp)
+}
+```
+
+Inside `response.gleam` itself, the collision is resolved by aliasing only
+the imported `Response` *type*, not the module:
+
+```gleam
+import gleam/http/response.{type Response as HttpResponse}
+```
+
+This keeps the module's own `Response` type unqualified while still allowing
+the HTTP response type to be referred to as `HttpResponse(String)`.
+
+### Known OpenAI API wire-shape quirks
+
+The Chat Completions API and the Responses API use **different JSON shapes**
+for the same conceptual payload. These are the ones we've hit:
+
+- **JSON-schema response format** — in Chat Completions, the schema is nested
+  under a `json_schema` key:
+  ```json
+  { "type": "json_schema", "json_schema": { "name": "...", "schema": {...} } }
+  ```
+  In the Responses API (`text.format`), the schema fields are **flattened**
+  alongside the type tag:
+  ```json
+  { "type": "json_schema", "name": "...", "schema": {...}, "strict": true }
+  ```
+  The `shared.ResponseFormatJsonSchema` type is used for both, but the
+  encoders differ: `shared.response_format_json_schema_to_json` nests for Chat,
+  `response.text_response_format_to_json` flattens for Responses.
+- **`CompletionUsage` vs `ResponseUsage`** — Chat-style endpoints return
+  `prompt_tokens`/`completion_tokens`/`total_tokens`; Responses-style endpoints
+  return `input_tokens`/`output_tokens`/`total_tokens` with nested
+  `input_tokens_details.cached_tokens` and `output_tokens_details.reasoning_tokens`.
+  Both live in `shared.gleam`; pick the right one for the module you're
+  porting.
 
 ### Type mapping from Rust
 
