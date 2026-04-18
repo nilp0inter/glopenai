@@ -1,5 +1,6 @@
 # glopenai
 
+[![test](https://github.com/nilp0inter/glopenai/actions/workflows/test.yml/badge.svg)](https://github.com/nilp0inter/glopenai/actions/workflows/test.yml)
 [![Package Version](https://img.shields.io/hexpm/v/glopenai)](https://hex.pm/packages/glopenai)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/glopenai/)
 
