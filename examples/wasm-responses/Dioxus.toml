@@ -1,8 +1,0 @@
-[application]
-name = "wasm-responses"
-default_platform = "web"
-out_dir = "dist"
-
-[web.app]
-title = "async-openai WASM demo"
-
