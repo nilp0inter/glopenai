@@ -1,5 +1,5 @@
 name = "glopenai"
-version = "0.1.0"
+version = "1.0.0"
 description = "Sans-IO OpenAI API client for Gleam, ported from async-openai"
 licences = ["MIT"]
 repository = { type = "github", user = "nilp0inter", repo = "glopenai" }
