@@ -63,14 +63,11 @@ instead of `Request(String)` -- use `httpc.send_bits` for those.
 
 ## Origin
 
-glopenai started as a direct port of
-[async-openai](https://github.com/64bit/async-openai), the most complete
-OpenAI client library for Rust. Types, field names, and API coverage are
-mapped as faithfully as possible from the Rust source, adapted to Gleam
-conventions (custom types instead of serde enums, `Result` instead of panics,
-builder functions instead of derive_builder macros).
-
-The port tracks upstream type changes from the Rust source.
+glopenai is based on [async-openai](https://github.com/64bit/async-openai),
+the most complete OpenAI client library for Rust. Types, field names, and API
+coverage were mapped as faithfully as possible from the Rust source, adapted
+to Gleam conventions (custom types instead of serde enums, `Result` instead
+of panics, builder functions instead of derive_builder macros).
 
 ## API coverage
 
