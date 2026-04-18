@@ -32,19 +32,19 @@ pub fn session_create_request_with_options_test() {
     |> chatkit.workflow_param_with_state_variables(
       dict.from_list([#("locale", dynamic.string("en"))]),
     )
-    |> chatkit.workflow_param_with_tracing(chatkit.WorkflowTracingParam(
-      enabled: Some(False),
-    ))
+    |> chatkit.workflow_param_with_tracing(
+      chatkit.WorkflowTracingParam(enabled: Some(False)),
+    )
   let body =
     chatkit.new_create_chat_session_body(workflow, "user_1")
     |> chatkit.with_expires_after(chatkit.new_expires_after_param(900))
-    |> chatkit.with_rate_limits(chatkit.RateLimitsParam(
-      max_requests_per_1_minute: Some(30),
-    ))
+    |> chatkit.with_rate_limits(
+      chatkit.RateLimitsParam(max_requests_per_1_minute: Some(30)),
+    )
     |> chatkit.with_chatkit_configuration(chatkit.ChatkitConfigurationParam(
-      automatic_thread_titling: Some(chatkit.AutomaticThreadTitlingParam(
-        enabled: Some(True),
-      )),
+      automatic_thread_titling: Some(
+        chatkit.AutomaticThreadTitlingParam(enabled: Some(True)),
+      ),
       file_upload: Some(chatkit.FileUploadParam(
         enabled: Some(True),
         max_file_size: Some(50),
@@ -58,7 +58,8 @@ pub fn session_create_request_with_options_test() {
   let assert True = string.contains(req.body, "\"enabled\":false")
   let assert True = string.contains(req.body, "\"anchor\":\"created_at\"")
   let assert True = string.contains(req.body, "\"seconds\":900")
-  let assert True = string.contains(req.body, "\"max_requests_per_1_minute\":30")
+  let assert True =
+    string.contains(req.body, "\"max_requests_per_1_minute\":30")
   let assert True = string.contains(req.body, "\"max_file_size\":50")
 }
 
@@ -81,8 +82,7 @@ pub fn session_cancel_request_builds_test() {
   let cfg = config.new("test-key")
   let req = chatkit.session_cancel_request(cfg, "sess_1")
   assert req.method == http.Post
-  let assert True =
-    string.contains(req.path, "/chatkit/sessions/sess_1/cancel")
+  let assert True = string.contains(req.path, "/chatkit/sessions/sess_1/cancel")
   // Empty body for POST cancel
   assert req.body == "{}"
 }

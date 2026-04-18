@@ -1,7 +1,6 @@
 /// Audio API: text-to-speech generation.
 /// Transcription and translation endpoints require multipart uploads and are
 /// deferred until multipart support is added.
-
 import gleam/dynamic/decode
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
@@ -146,9 +145,7 @@ pub fn voice_to_json(voice: Voice) -> json.Json {
   }
 }
 
-pub fn speech_response_format_to_json(
-  format: SpeechResponseFormat,
-) -> json.Json {
+pub fn speech_response_format_to_json(format: SpeechResponseFormat) -> json.Json {
   json.string(case format {
     Mp3 -> "mp3"
     Opus -> "opus"
@@ -175,9 +172,7 @@ pub fn stream_format_to_json(format: StreamFormat) -> json.Json {
   })
 }
 
-pub fn create_speech_request_to_json(
-  request: CreateSpeechRequest,
-) -> json.Json {
+pub fn create_speech_request_to_json(request: CreateSpeechRequest) -> json.Json {
   codec.object_with_optional(
     [
       #("input", json.string(request.input)),
@@ -185,11 +180,7 @@ pub fn create_speech_request_to_json(
       #("voice", voice_to_json(request.voice)),
     ],
     [
-      codec.optional_field(
-        "instructions",
-        request.instructions,
-        json.string,
-      ),
+      codec.optional_field("instructions", request.instructions, json.string),
       codec.optional_field(
         "response_format",
         request.response_format,
@@ -238,9 +229,7 @@ pub fn voice_decoder() -> decode.Decoder(Voice) {
   )
 }
 
-pub fn speech_response_format_decoder() -> decode.Decoder(
-  SpeechResponseFormat,
-) {
+pub fn speech_response_format_decoder() -> decode.Decoder(SpeechResponseFormat) {
   use value <- decode.then(decode.string)
   case value {
     "mp3" -> decode.success(Mp3)

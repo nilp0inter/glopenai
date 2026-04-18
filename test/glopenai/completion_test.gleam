@@ -19,7 +19,8 @@ pub fn request_encoding_test() {
   let encoded =
     completion.create_completion_request_to_json(request) |> json.to_string
 
-  let assert True = string.contains(encoded, "\"model\":\"gpt-3.5-turbo-instruct\"")
+  let assert True =
+    string.contains(encoded, "\"model\":\"gpt-3.5-turbo-instruct\"")
   let assert True = string.contains(encoded, "\"prompt\":\"Say hello\"")
   let assert True = string.contains(encoded, "\"max_tokens\":100")
 }

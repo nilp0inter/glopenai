@@ -103,8 +103,7 @@ pub fn api_error_response_test() {
 pub fn batch_request_input_decoding_test() {
   let body =
     "{\"custom_id\":\"req-1\",\"method\":\"POST\",\"url\":\"/v1/chat/completions\",\"body\":null}"
-  let assert Ok(result) =
-    json.parse(body, batch.batch_request_input_decoder())
+  let assert Ok(result) = json.parse(body, batch.batch_request_input_decoder())
   assert result.custom_id == "req-1"
   assert result.method == batch.Post
   assert result.url == batch.V1ChatCompletions
@@ -113,8 +112,7 @@ pub fn batch_request_input_decoding_test() {
 pub fn batch_request_output_decoding_test() {
   let body =
     "{\"id\":\"resp-1\",\"custom_id\":\"req-1\",\"response\":{\"status_code\":200,\"request_id\":\"req-abc\",\"body\":{\"choices\":[]}},\"error\":null}"
-  let assert Ok(result) =
-    json.parse(body, batch.batch_request_output_decoder())
+  let assert Ok(result) = json.parse(body, batch.batch_request_output_decoder())
   assert result.id == "resp-1"
   assert result.custom_id == "req-1"
   let assert Some(resp) = result.response

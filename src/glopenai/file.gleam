@@ -1,5 +1,4 @@
 /// Files API: upload, list, retrieve, delete, and download files.
-
 import gleam/bit_array
 import gleam/dynamic/decode
 import gleam/http
@@ -100,9 +99,7 @@ pub type DeleteFileResponse {
 
 // --- Encoders ---
 
-pub fn openai_file_purpose_to_json(
-  purpose: OpenAiFilePurpose,
-) -> json.Json {
+pub fn openai_file_purpose_to_json(purpose: OpenAiFilePurpose) -> json.Json {
   json.string(case purpose {
     Assistants -> "assistants"
     AssistantsOutput -> "assistants_output"
@@ -194,11 +191,7 @@ fn delete_file_response_decoder() -> decode.Decoder(DeleteFileResponse) {
   use id <- decode.field("id", decode.string)
   use object <- decode.field("object", decode.string)
   use deleted <- decode.field("deleted", decode.bool)
-  decode.success(DeleteFileResponse(
-    id: id,
-    object: object,
-    deleted: deleted,
-  ))
+  decode.success(DeleteFileResponse(id: id, object: object, deleted: deleted))
 }
 
 // --- File upload ---
@@ -352,10 +345,7 @@ pub fn list_response(
 }
 
 /// Build a request to retrieve metadata for a specific file.
-pub fn retrieve_request(
-  config: Config,
-  file_id: String,
-) -> Request(String) {
+pub fn retrieve_request(config: Config, file_id: String) -> Request(String) {
   internal.get_request(config, "/files/" <> file_id)
 }
 
@@ -367,10 +357,7 @@ pub fn retrieve_response(
 }
 
 /// Build a request to delete a file.
-pub fn delete_request(
-  config: Config,
-  file_id: String,
-) -> Request(String) {
+pub fn delete_request(config: Config, file_id: String) -> Request(String) {
   internal.delete_request(config, "/files/" <> file_id)
 }
 
@@ -383,10 +370,7 @@ pub fn delete_response(
 
 /// Build a request to download the content of a file.
 /// The response body contains the raw file content.
-pub fn content_request(
-  config: Config,
-  file_id: String,
-) -> Request(String) {
+pub fn content_request(config: Config, file_id: String) -> Request(String) {
   internal.get_request(config, "/files/" <> file_id <> "/content")
 }
 

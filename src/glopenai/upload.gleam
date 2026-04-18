@@ -8,7 +8,6 @@
 /// - `add_part_request` — `POST /uploads/{id}/parts` (multipart)
 /// - `complete_request` — `POST /uploads/{id}/complete`
 /// - `cancel_request`   — `POST /uploads/{id}/cancel`
-
 import gleam/dynamic/decode
 import gleam/http
 import gleam/http/request.{type Request}
@@ -116,12 +115,7 @@ pub fn upload_decoder() -> decode.Decoder(Upload) {
 }
 
 pub type UploadPart {
-  UploadPart(
-    id: String,
-    created_at: Int,
-    upload_id: String,
-    object: String,
-  )
+  UploadPart(id: String, created_at: Int, upload_id: String, object: String)
 }
 
 pub fn upload_part_decoder() -> decode.Decoder(UploadPart) {

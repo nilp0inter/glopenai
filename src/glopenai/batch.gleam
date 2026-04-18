@@ -1,5 +1,4 @@
 /// Batch API: create, retrieve, cancel, and list batch processing jobs.
-
 import gleam/dynamic
 import gleam/dynamic/decode
 import gleam/http/request.{type Request}
@@ -58,10 +57,7 @@ pub type BatchRequestInputMethod {
 
 /// Configures when output files expire after creation.
 pub type BatchFileExpirationAfter {
-  BatchFileExpirationAfter(
-    anchor: BatchFileExpirationAnchor,
-    seconds: Int,
-  )
+  BatchFileExpirationAfter(anchor: BatchFileExpirationAnchor, seconds: Int)
 }
 
 /// Request to create a new batch.
@@ -272,11 +268,7 @@ pub fn batch_request_to_json(request: BatchRequest) -> json.Json {
       ),
     ],
     [
-      codec.optional_field(
-        "metadata",
-        request.metadata,
-        codec.dynamic_to_json,
-      ),
+      codec.optional_field("metadata", request.metadata, codec.dynamic_to_json),
       codec.optional_field(
         "output_expires_after",
         request.output_expires_after,
@@ -356,11 +348,7 @@ pub fn batch_error_decoder() -> decode.Decoder(BatchError) {
     None,
     decode.optional(decode.string),
   )
-  use line <- decode.optional_field(
-    "line",
-    None,
-    decode.optional(decode.int),
-  )
+  use line <- decode.optional_field("line", None, decode.optional(decode.int))
   decode.success(BatchError(
     code: code,
     message: message,
@@ -592,15 +580,8 @@ pub fn batch_request_output_decoder() -> decode.Decoder(BatchRequestOutput) {
 // ============================================================================
 
 /// Build a request to create a new batch.
-pub fn create_request(
-  config: Config,
-  params: BatchRequest,
-) -> Request(String) {
-  internal.post_request(
-    config,
-    "/batches",
-    batch_request_to_json(params),
-  )
+pub fn create_request(config: Config, params: BatchRequest) -> Request(String) {
+  internal.post_request(config, "/batches", batch_request_to_json(params))
 }
 
 /// Parse the response from creating a batch.
@@ -623,10 +604,7 @@ pub fn list_response(
 }
 
 /// Build a request to retrieve a specific batch.
-pub fn retrieve_request(
-  config: Config,
-  batch_id: String,
-) -> Request(String) {
+pub fn retrieve_request(config: Config, batch_id: String) -> Request(String) {
   internal.get_request(config, "/batches/" <> batch_id)
 }
 
@@ -638,10 +616,7 @@ pub fn retrieve_response(
 }
 
 /// Build a request to cancel a batch.
-pub fn cancel_request(
-  config: Config,
-  batch_id: String,
-) -> Request(String) {
+pub fn cancel_request(config: Config, batch_id: String) -> Request(String) {
   // Cancel is POST with empty body
   internal.post_request(
     config,

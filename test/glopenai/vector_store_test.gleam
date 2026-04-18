@@ -48,8 +48,7 @@ pub fn create_request_static_chunking_test() {
     )
   let req = vs.create_request(cfg, request)
   let assert True = string.contains(req.body, "\"type\":\"static\"")
-  let assert True =
-    string.contains(req.body, "\"max_chunk_size_tokens\":800")
+  let assert True = string.contains(req.body, "\"max_chunk_size_tokens\":800")
   let assert True = string.contains(req.body, "\"chunk_overlap_tokens\":400")
 }
 
@@ -104,7 +103,8 @@ pub fn delete_request_builds_test() {
 }
 
 pub fn delete_response_decodes_test() {
-  let body = "{\"id\":\"vs_42\",\"object\":\"vector_store.deleted\",\"deleted\":true}"
+  let body =
+    "{\"id\":\"vs_42\",\"object\":\"vector_store.deleted\",\"deleted\":true}"
   let resp = response.new(200) |> response.set_body(body)
   let assert Ok(result) = vs.delete_response(resp)
   assert result.id == "vs_42"
@@ -156,16 +156,15 @@ pub fn search_request_array_query_test() {
 pub fn search_request_with_filter_test() {
   let cfg = config.new("test-key")
   let filter =
-    vs.CompoundFilter(vs.CompoundFilterRecord(
-      compound_type: vs.And,
-      filters: [
+    vs.CompoundFilter(
+      vs.CompoundFilterRecord(compound_type: vs.And, filters: [
         vs.ComparisonFilter(vs.ComparisonFilterRecord(
           comparison_type: vs.Equals,
           key: "kind",
           value: dynamic.string("doc"),
         )),
-      ],
-    ))
+      ]),
+    )
   let req =
     vs.search_request(
       cfg,
@@ -335,8 +334,7 @@ pub fn batch_cancel_request_builds_test() {
   let cfg = config.new("test-key")
   let req = vs.batch_cancel_request(cfg, "vs_1", "batch_1")
   assert req.method == http.Post
-  let assert True =
-    string.contains(req.path, "/file_batches/batch_1/cancel")
+  let assert True = string.contains(req.path, "/file_batches/batch_1/cancel")
   // POST cancel must carry an empty JSON body.
   assert req.body == "{}"
 }
@@ -356,8 +354,7 @@ pub fn batch_list_files_with_query_test() {
         filter: Some(vs.FilterFailed),
       ),
     )
-  let assert True =
-    string.contains(req.path, "/file_batches/batch_1/files")
+  let assert True = string.contains(req.path, "/file_batches/batch_1/files")
   let assert Some(qs) = req.query
   let assert True = string.contains(qs, "limit=10")
   let assert True = string.contains(qs, "order=asc")

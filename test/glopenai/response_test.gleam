@@ -67,8 +67,7 @@ pub fn cancel_request_building_test() {
   let http_req = resp.cancel_request(cfg, "resp_abc")
 
   assert http_req.method == http.Post
-  let assert True =
-    string.contains(http_req.path, "/responses/resp_abc/cancel")
+  let assert True = string.contains(http_req.path, "/responses/resp_abc/cancel")
 }
 
 pub fn response_decoding_test() {
@@ -155,8 +154,7 @@ pub fn stream_event_response_created_test() {
     "{\"type\":\"response.created\",\"sequence_number\":0,\"response\":{\"id\":\"resp_1\",\"object\":\"response\",\"created_at\":1700000000,\"model\":\"gpt-4o\",\"status\":\"in_progress\",\"output\":[]}}"
 
   let assert Ok(Some(event)) = resp.parse_stream_event(data)
-  let assert resp.EventResponseCreated(sequence_number: 0, response: r) =
-    event
+  let assert resp.EventResponseCreated(sequence_number: 0, response: r) = event
   assert r.id == "resp_1"
   assert r.status == resp.StatusInProgress
 }
@@ -213,10 +211,8 @@ pub fn include_enum_encoding_test() {
 
   let encoded = resp.create_response_to_json(request) |> json.to_string
 
-  let assert True =
-    string.contains(encoded, "web_search_call.action.sources")
-  let assert True =
-    string.contains(encoded, "reasoning.encrypted_content")
+  let assert True = string.contains(encoded, "web_search_call.action.sources")
+  let assert True = string.contains(encoded, "reasoning.encrypted_content")
 }
 
 pub fn response_with_usage_test() {

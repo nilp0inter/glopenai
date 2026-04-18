@@ -3,7 +3,6 @@
 ///
 /// This is the largest module — it covers the unified Responses API with 20+
 /// item variants, many tool types, and 48 streaming event types.
-
 import gleam/dict.{type Dict}
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode
@@ -329,12 +328,7 @@ pub type FileCitationBody {
 }
 
 pub type UrlCitationBody {
-  UrlCitationBody(
-    end_index: Int,
-    start_index: Int,
-    title: String,
-    url: String,
-  )
+  UrlCitationBody(end_index: Int, start_index: Int, title: String, url: String)
 }
 
 pub type ContainerFileCitationBody {
@@ -444,10 +438,7 @@ pub type ConversationParam {
 // ============================================================================
 
 pub type Reasoning {
-  Reasoning(
-    effort: Option(ReasoningEffort),
-    summary: Option(ReasoningSummary),
-  )
+  Reasoning(effort: Option(ReasoningEffort), summary: Option(ReasoningSummary))
 }
 
 // ============================================================================
@@ -507,10 +498,7 @@ pub type ComputerCallSafetyCheckParam {
 }
 
 pub type ComputerScreenshotImage {
-  ComputerScreenshotImage(
-    file_id: Option(String),
-    image_url: Option(String),
-  )
+  ComputerScreenshotImage(file_id: Option(String), image_url: Option(String))
 }
 
 pub type ComputerCallOutputItemParam {
@@ -704,10 +692,7 @@ pub type ReasoningItem {
 }
 
 pub type CompactionSummaryItemParam {
-  CompactionSummaryItemParam(
-    id: Option(String),
-    encrypted_content: String,
-  )
+  CompactionSummaryItemParam(id: Option(String), encrypted_content: String)
 }
 
 pub type CompactionBody {
@@ -1119,10 +1104,7 @@ pub type CodeInterpreterTool {
 }
 
 pub type ImageGenToolInputImageMask {
-  ImageGenToolInputImageMask(
-    image_url: Option(String),
-    file_id: Option(String),
-  )
+  ImageGenToolInputImageMask(image_url: Option(String), file_id: Option(String))
 }
 
 pub type ImageGenTool {
@@ -1345,11 +1327,7 @@ pub type OutputItem {
 // ============================================================================
 
 pub type Prompt {
-  Prompt(
-    id: String,
-    version: Option(String),
-    variables: Option(Dynamic),
-  )
+  Prompt(id: String, version: Option(String), variables: Option(Dynamic))
 }
 
 // ============================================================================
@@ -1790,10 +1768,7 @@ pub fn new_create_response(input input: InputParam) -> CreateResponse {
   )
 }
 
-pub fn with_model(
-  request: CreateResponse,
-  model: String,
-) -> CreateResponse {
+pub fn with_model(request: CreateResponse, model: String) -> CreateResponse {
   CreateResponse(..request, model: Some(model))
 }
 
@@ -1804,10 +1779,7 @@ pub fn with_instructions(
   CreateResponse(..request, instructions: Some(instructions))
 }
 
-pub fn with_tools(
-  request: CreateResponse,
-  tools: List(Tool),
-) -> CreateResponse {
+pub fn with_tools(request: CreateResponse, tools: List(Tool)) -> CreateResponse {
   CreateResponse(..request, tools: Some(tools))
 }
 
@@ -1825,17 +1797,11 @@ pub fn with_max_output_tokens(
   CreateResponse(..request, max_output_tokens: Some(max_output_tokens))
 }
 
-pub fn with_stream(
-  request: CreateResponse,
-  stream: Bool,
-) -> CreateResponse {
+pub fn with_stream(request: CreateResponse, stream: Bool) -> CreateResponse {
   CreateResponse(..request, stream: Some(stream))
 }
 
-pub fn with_store(
-  request: CreateResponse,
-  store: Bool,
-) -> CreateResponse {
+pub fn with_store(request: CreateResponse, store: Bool) -> CreateResponse {
   CreateResponse(..request, store: Some(store))
 }
 
@@ -1850,10 +1816,7 @@ pub fn with_previous_response_id(
   request: CreateResponse,
   previous_response_id: String,
 ) -> CreateResponse {
-  CreateResponse(
-    ..request,
-    previous_response_id: Some(previous_response_id),
-  )
+  CreateResponse(..request, previous_response_id: Some(previous_response_id))
 }
 
 pub fn with_reasoning(
@@ -1891,10 +1854,7 @@ pub fn with_service_tier(
   CreateResponse(..request, service_tier: Some(tier))
 }
 
-pub fn with_top_p(
-  request: CreateResponse,
-  top_p: Float,
-) -> CreateResponse {
+pub fn with_top_p(request: CreateResponse, top_p: Float) -> CreateResponse {
   CreateResponse(..request, top_p: Some(top_p))
 }
 
@@ -2147,15 +2107,12 @@ pub fn input_content_to_json(content: InputContent) -> json.Json {
         ],
       )
     ContentInputFile(c) ->
-      codec.object_with_optional(
-        [#("type", json.string("input_file"))],
-        [
-          codec.optional_field("file_data", c.file_data, json.string),
-          codec.optional_field("file_id", c.file_id, json.string),
-          codec.optional_field("file_url", c.file_url, json.string),
-          codec.optional_field("filename", c.filename, json.string),
-        ],
-      )
+      codec.object_with_optional([#("type", json.string("input_file"))], [
+        codec.optional_field("file_data", c.file_data, json.string),
+        codec.optional_field("file_id", c.file_id, json.string),
+        codec.optional_field("file_url", c.file_url, json.string),
+        codec.optional_field("filename", c.filename, json.string),
+      ])
   }
 }
 
@@ -2187,31 +2144,21 @@ pub fn input_param_to_json(input: InputParam) -> json.Json {
 pub fn input_item_to_json(item: InputItem) -> json.Json {
   case item {
     InputItemReference(ref) ->
-      codec.object_with_optional(
-        [#("id", json.string(ref.id))],
-        [
-          codec.optional_field("type", ref.item_type, json.string),
-        ],
-      )
+      codec.object_with_optional([#("id", json.string(ref.id))], [
+        codec.optional_field("type", ref.item_type, json.string),
+      ])
     InputItemItem(i) -> item_to_json(i)
     InputItemEasyMessage(m) -> easy_input_message_to_json(m)
   }
 }
 
 pub fn function_tool_to_json(tool: FunctionTool) -> json.Json {
-  codec.object_with_optional(
-    [#("name", json.string(tool.name))],
-    [
-      codec.optional_field(
-        "parameters",
-        tool.parameters,
-        codec.dynamic_to_json,
-      ),
-      codec.optional_field("strict", tool.strict, json.bool),
-      codec.optional_field("description", tool.description, json.string),
-      codec.optional_field("defer_loading", tool.defer_loading, json.bool),
-    ],
-  )
+  codec.object_with_optional([#("name", json.string(tool.name))], [
+    codec.optional_field("parameters", tool.parameters, codec.dynamic_to_json),
+    codec.optional_field("strict", tool.strict, json.bool),
+    codec.optional_field("description", tool.description, json.string),
+    codec.optional_field("defer_loading", tool.defer_loading, json.bool),
+  ])
 }
 
 pub fn web_search_tool_to_json(tool: WebSearchTool) -> json.Json {
@@ -2224,15 +2171,12 @@ pub fn web_search_tool_to_json(tool: WebSearchTool) -> json.Json {
       ])
     }),
     codec.optional_field("user_location", tool.user_location, fn(loc) {
-      codec.object_with_optional(
-        [#("type", json.string("approximate"))],
-        [
-          codec.optional_field("city", loc.city, json.string),
-          codec.optional_field("country", loc.country, json.string),
-          codec.optional_field("region", loc.region, json.string),
-          codec.optional_field("timezone", loc.timezone, json.string),
-        ],
-      )
+      codec.object_with_optional([#("type", json.string("approximate"))], [
+        codec.optional_field("city", loc.city, json.string),
+        codec.optional_field("country", loc.country, json.string),
+        codec.optional_field("region", loc.region, json.string),
+        codec.optional_field("timezone", loc.timezone, json.string),
+      ])
     }),
     codec.optional_field(
       "search_context_size",
@@ -2307,36 +2251,21 @@ pub fn tool_to_json(tool: Tool) -> json.Json {
       codec.object_with_optional(
         [
           #("type", json.string("file_search")),
-          #(
-            "vector_store_ids",
-            json.array(t.vector_store_ids, json.string),
-          ),
+          #("vector_store_ids", json.array(t.vector_store_ids, json.string)),
         ],
         [
-          codec.optional_field(
-            "max_num_results",
-            t.max_num_results,
-            json.int,
-          ),
-          codec.optional_field(
-            "filters",
-            t.filters,
-            codec.dynamic_to_json,
-          ),
+          codec.optional_field("max_num_results", t.max_num_results, json.int),
+          codec.optional_field("filters", t.filters, codec.dynamic_to_json),
           codec.optional_field("ranking_options", t.ranking_options, fn(r) {
             codec.object_with_optional(
               [#("ranker", rank_version_type_to_json(r.ranker))],
               [
-                codec.optional_field(
-                  "hybrid_search",
-                  r.hybrid_search,
-                  fn(h) {
-                    json.object([
-                      #("embedding_weight", json.float(h.embedding_weight)),
-                      #("text_weight", json.float(h.text_weight)),
-                    ])
-                  },
-                ),
+                codec.optional_field("hybrid_search", r.hybrid_search, fn(h) {
+                  json.object([
+                    #("embedding_weight", json.float(h.embedding_weight)),
+                    #("text_weight", json.float(h.text_weight)),
+                  ])
+                }),
                 codec.optional_field(
                   "score_threshold",
                   r.score_threshold,
@@ -2360,39 +2289,28 @@ pub fn tool_to_json(tool: Tool) -> json.Json {
         #("container", code_interpreter_container_to_json(t.container)),
       ])
     ToolImageGeneration(t) ->
-      codec.object_with_optional(
-        [#("type", json.string("image_generation"))],
-        [
-          codec.optional_field(
-            "background",
-            t.background,
-            image_gen_bg_to_json,
-          ),
-          codec.optional_field(
-            "input_fidelity",
-            t.input_fidelity,
-            input_fidelity_to_json,
-          ),
-          codec.optional_field("model", t.model, json.string),
-          codec.optional_field(
-            "moderation",
-            t.moderation,
-            image_gen_moderation_to_json,
-          ),
-          codec.optional_field(
-            "output_format",
-            t.output_format,
-            image_gen_fmt_to_json,
-          ),
-          codec.optional_field(
-            "quality",
-            t.quality,
-            image_gen_quality_to_json,
-          ),
-          codec.optional_field("size", t.size, image_gen_size_to_json),
-          codec.optional_field("action", t.action, image_gen_action_to_json),
-        ],
-      )
+      codec.object_with_optional([#("type", json.string("image_generation"))], [
+        codec.optional_field("background", t.background, image_gen_bg_to_json),
+        codec.optional_field(
+          "input_fidelity",
+          t.input_fidelity,
+          input_fidelity_to_json,
+        ),
+        codec.optional_field("model", t.model, json.string),
+        codec.optional_field(
+          "moderation",
+          t.moderation,
+          image_gen_moderation_to_json,
+        ),
+        codec.optional_field(
+          "output_format",
+          t.output_format,
+          image_gen_fmt_to_json,
+        ),
+        codec.optional_field("quality", t.quality, image_gen_quality_to_json),
+        codec.optional_field("size", t.size, image_gen_size_to_json),
+        codec.optional_field("action", t.action, image_gen_action_to_json),
+      ])
     ToolLocalShell -> json.object([#("type", json.string("local_shell"))])
     ToolApplyPatch -> json.object([#("type", json.string("apply_patch"))])
     ToolComputer -> json.object([#("type", json.string("computer"))])
@@ -2403,27 +2321,27 @@ pub fn tool_to_json(tool: Tool) -> json.Json {
     ToolComputerUsePreview(t) ->
       json.object([
         #("type", json.string("computer_use_preview")),
-        #("environment", json.string(case t.environment {
-          EnvironmentWindows -> "windows"
-          EnvironmentMac -> "mac"
-          EnvironmentLinux -> "linux"
-          EnvironmentUbuntu -> "ubuntu"
-          EnvironmentBrowser -> "browser"
-        })),
+        #(
+          "environment",
+          json.string(case t.environment {
+            EnvironmentWindows -> "windows"
+            EnvironmentMac -> "mac"
+            EnvironmentLinux -> "linux"
+            EnvironmentUbuntu -> "ubuntu"
+            EnvironmentBrowser -> "browser"
+          }),
+        ),
         #("display_width", json.int(t.display_width)),
         #("display_height", json.int(t.display_height)),
       ])
     ToolShell(t) ->
-      codec.object_with_optional(
-        [#("type", json.string("shell"))],
-        [
-          codec.optional_field(
-            "environment",
-            t.environment,
-            function_shell_environment_to_json,
-          ),
-        ],
-      )
+      codec.object_with_optional([#("type", json.string("shell"))], [
+        codec.optional_field(
+          "environment",
+          t.environment,
+          function_shell_environment_to_json,
+        ),
+      ])
     ToolCustom(t) -> custom_tool_param_to_json(t)
     ToolNamespace(t) ->
       json.object([
@@ -2433,22 +2351,15 @@ pub fn tool_to_json(tool: Tool) -> json.Json {
         #("tools", json.array(t.tools, namespace_tool_param_tool_to_json)),
       ])
     ToolToolSearch(t) ->
-      codec.object_with_optional(
-        [#("type", json.string("tool_search"))],
-        [
-          codec.optional_field(
-            "execution",
-            t.execution,
-            tool_search_execution_type_to_json,
-          ),
-          codec.optional_field("description", t.description, json.string),
-          codec.optional_field(
-            "parameters",
-            t.parameters,
-            codec.dynamic_to_json,
-          ),
-        ],
-      )
+      codec.object_with_optional([#("type", json.string("tool_search"))], [
+        codec.optional_field(
+          "execution",
+          t.execution,
+          tool_search_execution_type_to_json,
+        ),
+        codec.optional_field("description", t.description, json.string),
+        codec.optional_field("parameters", t.parameters, codec.dynamic_to_json),
+      ])
   }
 }
 
@@ -2469,8 +2380,7 @@ fn custom_tool_param_to_json(t: CustomToolParam) -> json.Json {
 fn custom_tool_param_format_to_json(f: CustomToolParamFormat) -> json.Json {
   case f {
     CustomFormatText -> json.object([#("type", json.string("text"))])
-    CustomFormatGrammar(_d) ->
-      json.object([#("type", json.string("grammar"))])
+    CustomFormatGrammar(_d) -> json.object([#("type", json.string("grammar"))])
   }
 }
 
@@ -2502,15 +2412,12 @@ fn code_interpreter_container_to_json(
 ) -> json.Json {
   case c {
     CodeInterpContainerAuto(a) ->
-      codec.object_with_optional(
-        [#("type", json.string("auto"))],
-        [
-          codec.optional_field("file_ids", a.file_ids, fn(ids) {
-            json.array(ids, json.string)
-          }),
-          codec.optional_field("memory_limit", a.memory_limit, json.int),
-        ],
-      )
+      codec.object_with_optional([#("type", json.string("auto"))], [
+        codec.optional_field("file_ids", a.file_ids, fn(ids) {
+          json.array(ids, json.string)
+        }),
+        codec.optional_field("memory_limit", a.memory_limit, json.int),
+      ])
     CodeInterpContainerId(id) -> json.string(id)
   }
 }
@@ -2520,25 +2427,21 @@ fn function_shell_environment_to_json(
 ) -> json.Json {
   case env {
     FunctionShellEnvContainerAuto(a) ->
-      codec.object_with_optional(
-        [#("type", json.string("container_auto"))],
-        [
-          codec.optional_field("file_ids", a.file_ids, fn(ids) {
-            json.array(ids, json.string)
-          }),
-          codec.optional_field(
-            "network_policy",
-            a.network_policy,
-            codec.dynamic_to_json,
-          ),
-          codec.optional_field("skills", a.skills, codec.dynamic_to_json),
-        ],
-      )
+      codec.object_with_optional([#("type", json.string("container_auto"))], [
+        codec.optional_field("file_ids", a.file_ids, fn(ids) {
+          json.array(ids, json.string)
+        }),
+        codec.optional_field(
+          "network_policy",
+          a.network_policy,
+          codec.dynamic_to_json,
+        ),
+        codec.optional_field("skills", a.skills, codec.dynamic_to_json),
+      ])
     FunctionShellEnvLocal(l) ->
-      codec.object_with_optional(
-        [#("type", json.string("local"))],
-        [codec.optional_field("skills", l.skills, codec.dynamic_to_json)],
-      )
+      codec.object_with_optional([#("type", json.string("local"))], [
+        codec.optional_field("skills", l.skills, codec.dynamic_to_json),
+      ])
     FunctionShellEnvContainerReference(r) ->
       json.object([
         #("type", json.string("container_reference")),
@@ -2551,39 +2454,33 @@ fn web_search_tool_with_type(
   type_name: String,
   tool: WebSearchTool,
 ) -> json.Json {
-  codec.object_with_optional(
-    [#("type", json.string(type_name))],
-    [
-      codec.optional_field("filters", tool.filters, fn(f) {
-        codec.object_with_optional([], [
-          codec.optional_field("allowed_domains", f.allowed_domains, fn(d) {
-            json.array(d, json.string)
-          }),
-        ])
-      }),
-      codec.optional_field("user_location", tool.user_location, fn(loc) {
-        codec.object_with_optional(
-          [#("type", json.string("approximate"))],
-          [
-            codec.optional_field("city", loc.city, json.string),
-            codec.optional_field("country", loc.country, json.string),
-            codec.optional_field("region", loc.region, json.string),
-            codec.optional_field("timezone", loc.timezone, json.string),
-          ],
-        )
-      }),
-      codec.optional_field(
-        "search_context_size",
-        tool.search_context_size,
-        web_search_context_size_to_json,
-      ),
-      codec.optional_field(
-        "search_content_types",
-        tool.search_content_types,
-        fn(types) { json.array(types, search_content_type_to_json) },
-      ),
-    ],
-  )
+  codec.object_with_optional([#("type", json.string(type_name))], [
+    codec.optional_field("filters", tool.filters, fn(f) {
+      codec.object_with_optional([], [
+        codec.optional_field("allowed_domains", f.allowed_domains, fn(d) {
+          json.array(d, json.string)
+        }),
+      ])
+    }),
+    codec.optional_field("user_location", tool.user_location, fn(loc) {
+      codec.object_with_optional([#("type", json.string("approximate"))], [
+        codec.optional_field("city", loc.city, json.string),
+        codec.optional_field("country", loc.country, json.string),
+        codec.optional_field("region", loc.region, json.string),
+        codec.optional_field("timezone", loc.timezone, json.string),
+      ])
+    }),
+    codec.optional_field(
+      "search_context_size",
+      tool.search_context_size,
+      web_search_context_size_to_json,
+    ),
+    codec.optional_field(
+      "search_content_types",
+      tool.search_content_types,
+      fn(types) { json.array(types, search_content_type_to_json) },
+    ),
+  ])
 }
 
 pub fn text_response_format_to_json(
@@ -2591,8 +2488,7 @@ pub fn text_response_format_to_json(
 ) -> json.Json {
   case f {
     TextFormatText -> json.object([#("type", json.string("text"))])
-    TextFormatJsonObject ->
-      json.object([#("type", json.string("json_object"))])
+    TextFormatJsonObject -> json.object([#("type", json.string("json_object"))])
     // In the Responses API, JSON schema fields are flattened under
     // `text.format` alongside the type tag — not nested under a
     // `json_schema` key like in the Chat Completions API.
@@ -2603,16 +2499,8 @@ pub fn text_response_format_to_json(
           #("name", json.string(schema.name)),
         ],
         [
-          codec.optional_field(
-            "description",
-            schema.description,
-            json.string,
-          ),
-          codec.optional_field(
-            "schema",
-            schema.schema,
-            codec.dynamic_to_json,
-          ),
+          codec.optional_field("description", schema.description, json.string),
+          codec.optional_field("schema", schema.schema, codec.dynamic_to_json),
           codec.optional_field("strict", schema.strict, json.bool),
         ],
       )
@@ -2647,8 +2535,7 @@ pub fn tool_choice_param_to_json(tc: ToolChoiceParam) -> json.Json {
       ])
     ToolChoiceParamApplyPatch ->
       json.object([#("type", json.string("apply_patch"))])
-    ToolChoiceParamShell ->
-      json.object([#("type", json.string("shell"))])
+    ToolChoiceParamShell -> json.object([#("type", json.string("shell"))])
     ToolChoiceParamHosted(h) -> {
       let type_str = case h {
         ToolChoiceFileSearch -> "file_search"
@@ -2665,10 +2552,13 @@ pub fn tool_choice_param_to_json(tc: ToolChoiceParam) -> json.Json {
     ToolChoiceParamAllowedTools(a) ->
       json.object([
         #("type", json.string("allowed_tools")),
-        #("mode", json.string(case a.mode {
-          AllowedModeAuto -> "auto"
-          AllowedModeRequired -> "required"
-        })),
+        #(
+          "mode",
+          json.string(case a.mode {
+            AllowedModeAuto -> "auto"
+            AllowedModeRequired -> "required"
+          }),
+        ),
         #("tools", codec.dynamic_to_json(a.tools)),
       ])
   }
@@ -2682,18 +2572,13 @@ pub fn conversation_param_to_json(c: ConversationParam) -> json.Json {
 }
 
 pub fn prompt_to_json(p: Prompt) -> json.Json {
-  codec.object_with_optional(
-    [#("id", json.string(p.id))],
-    [
-      codec.optional_field("version", p.version, json.string),
-      codec.optional_field("variables", p.variables, codec.dynamic_to_json),
-    ],
-  )
+  codec.object_with_optional([#("id", json.string(p.id))], [
+    codec.optional_field("version", p.version, json.string),
+    codec.optional_field("variables", p.variables, codec.dynamic_to_json),
+  ])
 }
 
-pub fn response_stream_options_to_json(
-  o: ResponseStreamOptions,
-) -> json.Json {
+pub fn response_stream_options_to_json(o: ResponseStreamOptions) -> json.Json {
   codec.object_with_optional([], [
     codec.optional_field(
       "include_obfuscation",
@@ -2749,10 +2634,7 @@ pub fn item_to_json(item: Item) -> json.Json {
       codec.object_with_optional(
         [
           #("type", json.string("mcp_approval_response")),
-          #(
-            "approval_request_id",
-            json.string(r.approval_request_id),
-          ),
+          #("approval_request_id", json.string(r.approval_request_id)),
           #("approve", json.bool(r.approve)),
         ],
         [
@@ -2794,10 +2676,7 @@ fn message_item_to_json(m: MessageItem) -> json.Json {
           #("type", json.string("message")),
           #("role", json.string("assistant")),
           #("id", json.string(o.id)),
-          #(
-            "content",
-            json.array(o.content, output_message_content_to_json),
-          ),
+          #("content", json.array(o.content, output_message_content_to_json)),
           #("status", output_status_to_json(o.status)),
         ],
         [codec.optional_field("phase", o.phase, message_phase_to_json)],
@@ -2868,33 +2747,24 @@ fn annotation_to_json(a: Annotation) -> json.Json {
 fn function_call_output_to_json(o: FunctionCallOutput) -> json.Json {
   case o {
     FunctionCallOutputText(t) -> json.string(t)
-    FunctionCallOutputContent(parts) ->
-      json.array(parts, input_content_to_json)
+    FunctionCallOutputContent(parts) -> json.array(parts, input_content_to_json)
   }
 }
 
-fn computer_screenshot_image_to_json(
-  img: ComputerScreenshotImage,
-) -> json.Json {
-  codec.object_with_optional(
-    [#("type", json.string("computer_screenshot"))],
-    [
-      codec.optional_field("file_id", img.file_id, json.string),
-      codec.optional_field("image_url", img.image_url, json.string),
-    ],
-  )
+fn computer_screenshot_image_to_json(img: ComputerScreenshotImage) -> json.Json {
+  codec.object_with_optional([#("type", json.string("computer_screenshot"))], [
+    codec.optional_field("file_id", img.file_id, json.string),
+    codec.optional_field("image_url", img.image_url, json.string),
+  ])
 }
 
 fn computer_call_safety_check_to_json(
   check: ComputerCallSafetyCheckParam,
 ) -> json.Json {
-  codec.object_with_optional(
-    [#("id", json.string(check.id))],
-    [
-      codec.optional_field("code", check.code, json.string),
-      codec.optional_field("message", check.message, json.string),
-    ],
-  )
+  codec.object_with_optional([#("id", json.string(check.id))], [
+    codec.optional_field("code", check.code, json.string),
+    codec.optional_field("message", check.message, json.string),
+  ])
 }
 
 fn reasoning_item_to_json(r: ReasoningItem, type_tag: String) -> json.Json {
@@ -2938,98 +2808,83 @@ fn summary_part_to_json(p: SummaryPart) -> json.Json {
 // ============================================================================
 
 pub fn create_response_to_json(request: CreateResponse) -> json.Json {
-  codec.object_with_optional(
-    [#("input", input_param_to_json(request.input))],
-    [
-      codec.optional_field("background", request.background, json.bool),
-      codec.optional_field(
-        "conversation",
-        request.conversation,
-        conversation_param_to_json,
-      ),
-      codec.optional_field("include", request.include, fn(i) {
-        json.array(i, include_enum_to_json)
-      }),
-      codec.optional_field(
-        "instructions",
-        request.instructions,
-        json.string,
-      ),
-      codec.optional_field(
-        "max_output_tokens",
-        request.max_output_tokens,
-        json.int,
-      ),
-      codec.optional_field(
-        "max_tool_calls",
-        request.max_tool_calls,
-        json.int,
-      ),
-      codec.optional_field("metadata", request.metadata, fn(m) {
-        json.object(
-          dict.to_list(m)
-          |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-        )
-      }),
-      codec.optional_field("model", request.model, json.string),
-      codec.optional_field(
-        "parallel_tool_calls",
-        request.parallel_tool_calls,
-        json.bool,
-      ),
-      codec.optional_field(
-        "previous_response_id",
-        request.previous_response_id,
-        json.string,
-      ),
-      codec.optional_field("prompt", request.prompt, prompt_to_json),
-      codec.optional_field(
-        "prompt_cache_key",
-        request.prompt_cache_key,
-        json.string,
-      ),
-      codec.optional_field(
-        "prompt_cache_retention",
-        request.prompt_cache_retention,
-        prompt_cache_retention_to_json,
-      ),
-      codec.optional_field("reasoning", request.reasoning, reasoning_to_json),
-      codec.optional_field(
-        "safety_identifier",
-        request.safety_identifier,
-        json.string,
-      ),
-      codec.optional_field(
-        "service_tier",
-        request.service_tier,
-        service_tier_to_json,
-      ),
-      codec.optional_field("store", request.store, json.bool),
-      codec.optional_field("stream", request.stream, json.bool),
-      codec.optional_field(
-        "stream_options",
-        request.stream_options,
-        response_stream_options_to_json,
-      ),
-      codec.optional_field("temperature", request.temperature, json.float),
-      codec.optional_field("text", request.text, response_text_param_to_json),
-      codec.optional_field(
-        "tool_choice",
-        request.tool_choice,
-        tool_choice_param_to_json,
-      ),
-      codec.optional_field("tools", request.tools, fn(t) {
-        json.array(t, tool_to_json)
-      }),
-      codec.optional_field("top_logprobs", request.top_logprobs, json.int),
-      codec.optional_field("top_p", request.top_p, json.float),
-      codec.optional_field(
-        "truncation",
-        request.truncation,
-        truncation_to_json,
-      ),
-    ],
-  )
+  codec.object_with_optional([#("input", input_param_to_json(request.input))], [
+    codec.optional_field("background", request.background, json.bool),
+    codec.optional_field(
+      "conversation",
+      request.conversation,
+      conversation_param_to_json,
+    ),
+    codec.optional_field("include", request.include, fn(i) {
+      json.array(i, include_enum_to_json)
+    }),
+    codec.optional_field("instructions", request.instructions, json.string),
+    codec.optional_field(
+      "max_output_tokens",
+      request.max_output_tokens,
+      json.int,
+    ),
+    codec.optional_field("max_tool_calls", request.max_tool_calls, json.int),
+    codec.optional_field("metadata", request.metadata, fn(m) {
+      json.object(
+        dict.to_list(m)
+        |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
+      )
+    }),
+    codec.optional_field("model", request.model, json.string),
+    codec.optional_field(
+      "parallel_tool_calls",
+      request.parallel_tool_calls,
+      json.bool,
+    ),
+    codec.optional_field(
+      "previous_response_id",
+      request.previous_response_id,
+      json.string,
+    ),
+    codec.optional_field("prompt", request.prompt, prompt_to_json),
+    codec.optional_field(
+      "prompt_cache_key",
+      request.prompt_cache_key,
+      json.string,
+    ),
+    codec.optional_field(
+      "prompt_cache_retention",
+      request.prompt_cache_retention,
+      prompt_cache_retention_to_json,
+    ),
+    codec.optional_field("reasoning", request.reasoning, reasoning_to_json),
+    codec.optional_field(
+      "safety_identifier",
+      request.safety_identifier,
+      json.string,
+    ),
+    codec.optional_field(
+      "service_tier",
+      request.service_tier,
+      service_tier_to_json,
+    ),
+    codec.optional_field("store", request.store, json.bool),
+    codec.optional_field("stream", request.stream, json.bool),
+    codec.optional_field(
+      "stream_options",
+      request.stream_options,
+      response_stream_options_to_json,
+    ),
+    codec.optional_field("temperature", request.temperature, json.float),
+    codec.optional_field("text", request.text, response_text_param_to_json),
+    codec.optional_field(
+      "tool_choice",
+      request.tool_choice,
+      tool_choice_param_to_json,
+    ),
+    codec.optional_field("tools", request.tools, fn(t) {
+      json.array(t, tool_to_json)
+    }),
+    codec.optional_field("top_logprobs", request.top_logprobs, json.int),
+    codec.optional_field("top_p", request.top_p, json.float),
+    codec.optional_field("truncation", request.truncation, truncation_to_json),
+  ])
 }
 
 // ============================================================================
@@ -3130,9 +2985,7 @@ pub fn reasoning_summary_decoder() -> decode.Decoder(ReasoningSummary) {
   }
 }
 
-pub fn prompt_cache_retention_decoder() -> decode.Decoder(
-  PromptCacheRetention,
-) {
+pub fn prompt_cache_retention_decoder() -> decode.Decoder(PromptCacheRetention) {
   use value <- decode.then(decode.string)
   case value {
     "in_memory" -> decode.success(PromptCacheInMemory)
@@ -3184,12 +3037,14 @@ pub fn text_response_format_decoder() -> decode.Decoder(
         None,
         decode.optional(decode.bool),
       )
-      decode.success(TextFormatJsonSchema(shared.ResponseFormatJsonSchema(
-        name: name,
-        description: description,
-        schema: schema,
-        strict: strict,
-      )))
+      decode.success(
+        TextFormatJsonSchema(shared.ResponseFormatJsonSchema(
+          name: name,
+          description: description,
+          schema: schema,
+          strict: strict,
+        )),
+      )
     }
     _ -> decode.failure(TextFormatText, "TextResponseFormatConfiguration")
   }
@@ -3212,23 +3067,27 @@ pub fn annotation_decoder() -> decode.Decoder(Annotation) {
       use file_id <- decode.field("file_id", decode.string)
       use filename <- decode.field("filename", decode.string)
       use index <- decode.field("index", decode.int)
-      decode.success(AnnotationFileCitation(FileCitationBody(
-        file_id: file_id,
-        filename: filename,
-        index: index,
-      )))
+      decode.success(
+        AnnotationFileCitation(FileCitationBody(
+          file_id: file_id,
+          filename: filename,
+          index: index,
+        )),
+      )
     }
     "url_citation" -> {
       use end_index <- decode.field("end_index", decode.int)
       use start_index <- decode.field("start_index", decode.int)
       use title <- decode.field("title", decode.string)
       use url <- decode.field("url", decode.string)
-      decode.success(AnnotationUrlCitation(UrlCitationBody(
-        end_index: end_index,
-        start_index: start_index,
-        title: title,
-        url: url,
-      )))
+      decode.success(
+        AnnotationUrlCitation(UrlCitationBody(
+          end_index: end_index,
+          start_index: start_index,
+          title: title,
+          url: url,
+        )),
+      )
     }
     "container_file_citation" -> {
       use container_id <- decode.field("container_id", decode.string)
@@ -3236,28 +3095,28 @@ pub fn annotation_decoder() -> decode.Decoder(Annotation) {
       use file_id <- decode.field("file_id", decode.string)
       use filename <- decode.field("filename", decode.string)
       use start_index <- decode.field("start_index", decode.int)
-      decode.success(AnnotationContainerFileCitation(
-        ContainerFileCitationBody(
+      decode.success(
+        AnnotationContainerFileCitation(ContainerFileCitationBody(
           container_id: container_id,
           end_index: end_index,
           file_id: file_id,
           filename: filename,
           start_index: start_index,
-        ),
-      ))
+        )),
+      )
     }
     "file_path" -> {
       use file_id <- decode.field("file_id", decode.string)
       use index <- decode.field("index", decode.int)
-      decode.success(AnnotationFilePath(FilePathAnnotation(
-        file_id: file_id,
-        index: index,
-      )))
+      decode.success(
+        AnnotationFilePath(FilePathAnnotation(file_id: file_id, index: index)),
+      )
     }
-    _ -> decode.failure(
-      AnnotationFilePath(FilePathAnnotation(file_id: "", index: 0)),
-      "Annotation",
-    )
+    _ ->
+      decode.failure(
+        AnnotationFilePath(FilePathAnnotation(file_id: "", index: 0)),
+        "Annotation",
+      )
   }
 }
 
@@ -3297,9 +3156,7 @@ pub fn output_text_content_decoder() -> decode.Decoder(OutputTextContent) {
   ))
 }
 
-pub fn output_message_content_decoder() -> decode.Decoder(
-  OutputMessageContent,
-) {
+pub fn output_message_content_decoder() -> decode.Decoder(OutputMessageContent) {
   use tag <- decode.field("type", decode.string)
   case tag {
     "output_text" -> {
@@ -3310,10 +3167,11 @@ pub fn output_message_content_decoder() -> decode.Decoder(
       use refusal <- decode.field("refusal", decode.string)
       decode.success(OutputMessageRefusal(RefusalContent(refusal: refusal)))
     }
-    _ -> decode.failure(
-      OutputMessageRefusal(RefusalContent(refusal: "")),
-      "OutputMessageContent",
-    )
+    _ ->
+      decode.failure(
+        OutputMessageRefusal(RefusalContent(refusal: "")),
+        "OutputMessageContent",
+      )
   }
 }
 
@@ -3330,14 +3188,15 @@ pub fn output_content_decoder() -> decode.Decoder(OutputContent) {
     }
     "reasoning_text" -> {
       use text <- decode.field("text", decode.string)
-      decode.success(OutputContentReasoningText(ReasoningTextContent(
-        text: text,
-      )))
+      decode.success(
+        OutputContentReasoningText(ReasoningTextContent(text: text)),
+      )
     }
-    _ -> decode.failure(
-      OutputContentRefusal(RefusalContent(refusal: "")),
-      "OutputContent",
-    )
+    _ ->
+      decode.failure(
+        OutputContentRefusal(RefusalContent(refusal: "")),
+        "OutputContent",
+      )
   }
 }
 
@@ -3375,10 +3234,12 @@ pub fn reasoning_item_decoder() -> decode.Decoder(ReasoningItem) {
   use content <- decode.optional_field(
     "content",
     None,
-    decode.optional(decode.list({
-      use text <- decode.field("text", decode.string)
-      decode.success(ReasoningTextContent(text: text))
-    })),
+    decode.optional(
+      decode.list({
+        use text <- decode.field("text", decode.string)
+        decode.success(ReasoningTextContent(text: text))
+      }),
+    ),
   )
   use encrypted_content <- decode.optional_field(
     "encrypted_content",
@@ -3408,11 +3269,7 @@ pub fn function_tool_call_decoder() -> decode.Decoder(FunctionToolCall) {
     decode.optional(decode.string),
   )
   use name <- decode.field("name", decode.string)
-  use id <- decode.optional_field(
-    "id",
-    None,
-    decode.optional(decode.string),
-  )
+  use id <- decode.optional_field("id", None, decode.optional(decode.string))
   use status <- decode.optional_field(
     "status",
     None,
@@ -3457,19 +3314,23 @@ pub fn web_search_tool_call_decoder() -> decode.Decoder(WebSearchToolCall) {
         use sources <- decode.optional_field(
           "sources",
           None,
-          decode.optional(decode.list({
-            use source_type <- decode.field("type", decode.string)
-            use url <- decode.field("url", decode.string)
-            decode.success(WebSearchActionSearchSource(
-              source_type: source_type,
-              url: url,
-            ))
-          })),
+          decode.optional(
+            decode.list({
+              use source_type <- decode.field("type", decode.string)
+              use url <- decode.field("url", decode.string)
+              decode.success(WebSearchActionSearchSource(
+                source_type: source_type,
+                url: url,
+              ))
+            }),
+          ),
         )
-        decode.success(WebSearchActionSearchVariant(WebSearchActionSearch(
-          query: query,
-          sources: sources,
-        )))
+        decode.success(
+          WebSearchActionSearchVariant(WebSearchActionSearch(
+            query: query,
+            sources: sources,
+          )),
+        )
       }
       "open_page" -> {
         use url <- decode.optional_field(
@@ -3477,33 +3338,38 @@ pub fn web_search_tool_call_decoder() -> decode.Decoder(WebSearchToolCall) {
           None,
           decode.optional(decode.string),
         )
-        decode.success(WebSearchActionOpenPageVariant(
-          WebSearchActionOpenPage(url: url),
-        ))
+        decode.success(
+          WebSearchActionOpenPageVariant(WebSearchActionOpenPage(url: url)),
+        )
       }
       "find" -> {
         use url <- decode.field("url", decode.string)
         use pattern <- decode.field("pattern", decode.string)
-        decode.success(WebSearchActionFindVariant(WebSearchActionFind(
-          url: url,
-          pattern: pattern,
-        )))
+        decode.success(
+          WebSearchActionFindVariant(WebSearchActionFind(
+            url: url,
+            pattern: pattern,
+          )),
+        )
       }
       "find_in_page" -> {
         use url <- decode.field("url", decode.string)
         use pattern <- decode.field("pattern", decode.string)
-        decode.success(WebSearchActionFindInPageVariant(WebSearchActionFind(
-          url: url,
-          pattern: pattern,
-        )))
+        decode.success(
+          WebSearchActionFindInPageVariant(WebSearchActionFind(
+            url: url,
+            pattern: pattern,
+          )),
+        )
       }
-      _ -> decode.failure(
-        WebSearchActionSearchVariant(WebSearchActionSearch(
-          query: "",
-          sources: None,
-        )),
-        "WebSearchToolCallAction",
-      )
+      _ ->
+        decode.failure(
+          WebSearchActionSearchVariant(WebSearchActionSearch(
+            query: "",
+            sources: None,
+          )),
+          "WebSearchToolCallAction",
+        )
     }
   })
   use id <- decode.field("id", decode.string)
@@ -3537,20 +3403,22 @@ pub fn file_search_tool_call_decoder() -> decode.Decoder(FileSearchToolCall) {
   use results <- decode.optional_field(
     "results",
     None,
-    decode.optional(decode.list({
-      use attributes <- decode.field("attributes", decode.dynamic)
-      use file_id <- decode.field("file_id", decode.string)
-      use filename <- decode.field("filename", decode.string)
-      use score <- decode.field("score", decode.float)
-      use text <- decode.field("text", decode.string)
-      decode.success(FileSearchToolCallResult(
-        attributes: attributes,
-        file_id: file_id,
-        filename: filename,
-        score: score,
-        text: text,
-      ))
-    })),
+    decode.optional(
+      decode.list({
+        use attributes <- decode.field("attributes", decode.dynamic)
+        use file_id <- decode.field("file_id", decode.string)
+        use filename <- decode.field("filename", decode.string)
+        use score <- decode.field("score", decode.float)
+        use text <- decode.field("text", decode.string)
+        decode.success(FileSearchToolCallResult(
+          attributes: attributes,
+          file_id: file_id,
+          filename: filename,
+          score: score,
+          text: text,
+        ))
+      }),
+    ),
   )
   decode.success(FileSearchToolCall(
     id: id,
@@ -3562,10 +3430,7 @@ pub fn file_search_tool_call_decoder() -> decode.Decoder(FileSearchToolCall) {
 
 pub fn compaction_body_decoder() -> decode.Decoder(CompactionBody) {
   use id <- decode.field("id", decode.string)
-  use encrypted_content <- decode.field(
-    "encrypted_content",
-    decode.string,
-  )
+  use encrypted_content <- decode.field("encrypted_content", decode.string)
   use created_by <- decode.optional_field(
     "created_by",
     None,
@@ -3598,17 +3463,21 @@ pub fn mcp_tool_call_decoder() -> decode.Decoder(McpToolCall) {
     None,
     decode.optional(decode.string),
   )
-  use status <- decode.optional_field("status", None, decode.optional({
-    use value <- decode.then(decode.string)
-    case value {
-      "in_progress" -> decode.success(McpCallInProgress)
-      "completed" -> decode.success(McpCallCompleted)
-      "incomplete" -> decode.success(McpCallIncomplete)
-      "calling" -> decode.success(McpCallCalling)
-      "failed" -> decode.success(McpCallFailed)
-      _ -> decode.failure(McpCallInProgress, "McpToolCallStatus")
-    }
-  }))
+  use status <- decode.optional_field(
+    "status",
+    None,
+    decode.optional({
+      use value <- decode.then(decode.string)
+      case value {
+        "in_progress" -> decode.success(McpCallInProgress)
+        "completed" -> decode.success(McpCallCompleted)
+        "incomplete" -> decode.success(McpCallIncomplete)
+        "calling" -> decode.success(McpCallCalling)
+        "failed" -> decode.success(McpCallFailed)
+        _ -> decode.failure(McpCallInProgress, "McpToolCallStatus")
+      }
+    }),
+  )
   decode.success(McpToolCall(
     arguments: arguments,
     id: id,
@@ -3723,14 +3592,16 @@ pub fn output_item_decoder() -> decode.Decoder(OutputItem) {
       )
       // We decode action/actions as dynamic since ComputerAction has many
       // variants. Users who need these can decode the dynamic value.
-      decode.success(OutputItemComputerCall(ComputerToolCall(
-        action: None,
-        actions: None,
-        call_id: call_id,
-        id: id,
-        pending_safety_checks: pending_safety_checks,
-        status: status,
-      )))
+      decode.success(
+        OutputItemComputerCall(ComputerToolCall(
+          action: None,
+          actions: None,
+          call_id: call_id,
+          id: id,
+          pending_safety_checks: pending_safety_checks,
+          status: status,
+        )),
+      )
     }
     "code_interpreter_call" -> {
       use code <- decode.optional_field(
@@ -3758,36 +3629,40 @@ pub fn output_item_decoder() -> decode.Decoder(OutputItem) {
       use outputs <- decode.optional_field(
         "outputs",
         None,
-        decode.optional(decode.list({
-          use out_tag <- decode.field("type", decode.string)
-          case out_tag {
-            "logs" -> {
-              use logs <- decode.field("logs", decode.string)
-              decode.success(CodeInterpOutputLogs(
-                CodeInterpreterOutputLogs(logs: logs),
-              ))
+        decode.optional(
+          decode.list({
+            use out_tag <- decode.field("type", decode.string)
+            case out_tag {
+              "logs" -> {
+                use logs <- decode.field("logs", decode.string)
+                decode.success(
+                  CodeInterpOutputLogs(CodeInterpreterOutputLogs(logs: logs)),
+                )
+              }
+              "image" -> {
+                use url <- decode.field("url", decode.string)
+                decode.success(
+                  CodeInterpOutputImage(CodeInterpreterOutputImage(url: url)),
+                )
+              }
+              _ ->
+                decode.failure(
+                  CodeInterpOutputLogs(CodeInterpreterOutputLogs(logs: "")),
+                  "CodeInterpreterToolCallOutput",
+                )
             }
-            "image" -> {
-              use url <- decode.field("url", decode.string)
-              decode.success(CodeInterpOutputImage(
-                CodeInterpreterOutputImage(url: url),
-              ))
-            }
-            _ ->
-              decode.failure(
-                CodeInterpOutputLogs(CodeInterpreterOutputLogs(logs: "")),
-                "CodeInterpreterToolCallOutput",
-              )
-          }
-        })),
+          }),
+        ),
       )
-      decode.success(OutputItemCodeInterpreterCall(CodeInterpreterToolCall(
-        code: code,
-        container_id: container_id,
-        id: id,
-        outputs: outputs,
-        status: status,
-      )))
+      decode.success(
+        OutputItemCodeInterpreterCall(CodeInterpreterToolCall(
+          code: code,
+          container_id: container_id,
+          id: id,
+          outputs: outputs,
+          status: status,
+        )),
+      )
     }
     "local_shell_call" -> {
       use call_id <- decode.field("call_id", decode.string)
@@ -3795,7 +3670,10 @@ pub fn output_item_decoder() -> decode.Decoder(OutputItem) {
       use status <- decode.field("status", output_status_decoder())
       use action <- decode.field("action", {
         use command <- decode.field("command", decode.list(decode.string))
-        use env <- decode.field("env", decode.dict(decode.string, decode.string))
+        use env <- decode.field(
+          "env",
+          decode.dict(decode.string, decode.string),
+        )
         use timeout_ms <- decode.optional_field(
           "timeout_ms",
           None,
@@ -3819,12 +3697,14 @@ pub fn output_item_decoder() -> decode.Decoder(OutputItem) {
           working_directory: working_directory,
         ))
       })
-      decode.success(OutputItemLocalShellCall(LocalShellToolCall(
-        action: action,
-        call_id: call_id,
-        id: id,
-        status: status,
-      )))
+      decode.success(
+        OutputItemLocalShellCall(LocalShellToolCall(
+          action: action,
+          call_id: call_id,
+          id: id,
+          status: status,
+        )),
+      )
     }
     "mcp_list_tools" -> {
       use id <- decode.field("id", decode.string)
@@ -3835,24 +3715,28 @@ pub fn output_item_decoder() -> decode.Decoder(OutputItem) {
         None,
         decode.optional(decode.string),
       )
-      decode.success(OutputItemMcpListTools(McpListTools(
-        id: id,
-        server_label: server_label,
-        tools: tools,
-        error: error,
-      )))
+      decode.success(
+        OutputItemMcpListTools(McpListTools(
+          id: id,
+          server_label: server_label,
+          tools: tools,
+          error: error,
+        )),
+      )
     }
     "mcp_approval_request" -> {
       use arguments <- decode.field("arguments", decode.string)
       use id <- decode.field("id", decode.string)
       use name <- decode.field("name", decode.string)
       use server_label <- decode.field("server_label", decode.string)
-      decode.success(OutputItemMcpApprovalRequest(McpApprovalRequest(
-        arguments: arguments,
-        id: id,
-        name: name,
-        server_label: server_label,
-      )))
+      decode.success(
+        OutputItemMcpApprovalRequest(McpApprovalRequest(
+          arguments: arguments,
+          id: id,
+          name: name,
+          server_label: server_label,
+        )),
+      )
     }
     "tool_search_call" -> {
       use id <- decode.field("id", decode.string)
@@ -3884,14 +3768,16 @@ pub fn output_item_decoder() -> decode.Decoder(OutputItem) {
         None,
         decode.optional(decode.string),
       )
-      decode.success(OutputItemToolSearchCall(ToolSearchCall(
-        id: id,
-        call_id: call_id,
-        execution: execution,
-        arguments: arguments,
-        status: status,
-        created_by: created_by,
-      )))
+      decode.success(
+        OutputItemToolSearchCall(ToolSearchCall(
+          id: id,
+          call_id: call_id,
+          execution: execution,
+          arguments: arguments,
+          status: status,
+          created_by: created_by,
+        )),
+      )
     }
     "tool_search_output" -> {
       use id <- decode.field("id", decode.string)
@@ -3923,14 +3809,16 @@ pub fn output_item_decoder() -> decode.Decoder(OutputItem) {
         None,
         decode.optional(decode.string),
       )
-      decode.success(OutputItemToolSearchOutput(ToolSearchOutput(
-        id: id,
-        call_id: call_id,
-        execution: execution,
-        tools: tools,
-        status: status,
-        created_by: created_by,
-      )))
+      decode.success(
+        OutputItemToolSearchOutput(ToolSearchOutput(
+          id: id,
+          call_id: call_id,
+          execution: execution,
+          tools: tools,
+          status: status,
+          created_by: created_by,
+        )),
+      )
     }
     // Remaining output types decoded with dynamic fields
     _ -> {
@@ -3985,10 +3873,14 @@ pub fn response_decoder() -> decode.Decoder(Response) {
     None,
     decode.optional(decode.bool),
   )
-  use billing <- decode.optional_field("billing", None, decode.optional({
-    use payer <- decode.field("payer", decode.string)
-    decode.success(Billing(payer: payer))
-  }))
+  use billing <- decode.optional_field(
+    "billing",
+    None,
+    decode.optional({
+      use payer <- decode.field("payer", decode.string)
+      decode.success(Billing(payer: payer))
+    }),
+  )
   use conversation <- decode.optional_field(
     "conversation",
     None,
@@ -4017,15 +3909,19 @@ pub fn response_decoder() -> decode.Decoder(Response) {
   use instructions <- decode.optional_field(
     "instructions",
     None,
-    decode.optional(decode.one_of(
-      decode.string |> decode.then(fn(s) {
-        decode.success(InstructionsText(s))
-      }),
-      [decode.dynamic |> decode.then(fn(_) {
-        // Array instructions are complex; decode as text fallback
-        decode.success(InstructionsText(""))
-      })],
-    )),
+    decode.optional(
+      decode.one_of(
+        decode.string
+          |> decode.then(fn(s) { decode.success(InstructionsText(s)) }),
+        [
+          decode.dynamic
+          |> decode.then(fn(_) {
+            // Array instructions are complex; decode as text fallback
+            decode.success(InstructionsText(""))
+          }),
+        ],
+      ),
+    ),
   )
   use max_output_tokens <- decode.optional_field(
     "max_output_tokens",
@@ -4192,10 +4088,7 @@ fn response_item_list_decoder() -> decode.Decoder(ResponseItemList) {
 fn token_counts_resource_decoder() -> decode.Decoder(TokenCountsResource) {
   use object <- decode.field("object", decode.string)
   use input_tokens <- decode.field("input_tokens", decode.int)
-  decode.success(TokenCountsResource(
-    object: object,
-    input_tokens: input_tokens,
-  ))
+  decode.success(TokenCountsResource(object: object, input_tokens: input_tokens))
 }
 
 fn compact_resource_decoder() -> decode.Decoder(CompactResource) {
@@ -4232,17 +4125,14 @@ pub fn parse_stream_event(
   }
 }
 
-pub fn response_stream_event_decoder() -> decode.Decoder(
-  ResponseStreamEvent,
-) {
+pub fn response_stream_event_decoder() -> decode.Decoder(ResponseStreamEvent) {
   use tag <- decode.field("type", decode.string)
   case tag {
     // Response lifecycle events — carry the full Response object
     "response.created" -> response_event_with_response(EventResponseCreated)
     "response.in_progress" ->
       response_event_with_response(EventResponseInProgress)
-    "response.completed" ->
-      response_event_with_response(EventResponseCompleted)
+    "response.completed" -> response_event_with_response(EventResponseCompleted)
     "response.failed" -> response_event_with_response(EventResponseFailed)
     "response.incomplete" ->
       response_event_with_response(EventResponseIncomplete)
@@ -4533,14 +4423,8 @@ pub fn response_stream_event_decoder() -> decode.Decoder(
       use sequence_number <- decode.field("sequence_number", decode.int)
       use output_index <- decode.field("output_index", decode.int)
       use item_id <- decode.field("item_id", decode.string)
-      use partial_image_index <- decode.field(
-        "partial_image_index",
-        decode.int,
-      )
-      use partial_image_b64 <- decode.field(
-        "partial_image_b64",
-        decode.string,
-      )
+      use partial_image_index <- decode.field("partial_image_index", decode.int)
+      use partial_image_b64 <- decode.field("partial_image_b64", decode.string)
       decode.success(EventResponseImageGenCallPartialImage(
         sequence_number: sequence_number,
         output_index: output_index,
@@ -4606,15 +4490,16 @@ pub fn response_stream_event_decoder() -> decode.Decoder(
       ))
     }
 
-    _ -> decode.failure(
-      EventResponseError(
-        sequence_number: 0,
-        code: None,
-        message: "unknown event type: " <> tag,
-        param: None,
-      ),
-      "ResponseStreamEvent",
-    )
+    _ ->
+      decode.failure(
+        EventResponseError(
+          sequence_number: 0,
+          code: None,
+          message: "unknown event type: " <> tag,
+          param: None,
+        ),
+        "ResponseStreamEvent",
+      )
   }
 }
 
@@ -4644,12 +4529,7 @@ fn output_index_delta_event(
   use output_index <- decode.field("output_index", decode.int)
   use item_id <- decode.field("item_id", decode.string)
   use delta <- decode.field("delta", decode.string)
-  decode.success(constructor(
-    sequence_number,
-    output_index,
-    item_id,
-    delta,
-  ))
+  decode.success(constructor(sequence_number, output_index, item_id, delta))
 }
 
 fn text_delta_event(
@@ -4698,15 +4578,8 @@ fn summary_text_delta_event(
 // ============================================================================
 
 /// Build a request to create a response.
-pub fn create_request(
-  config: Config,
-  params: CreateResponse,
-) -> Request(String) {
-  internal.post_request(
-    config,
-    "/responses",
-    create_response_to_json(params),
-  )
+pub fn create_request(config: Config, params: CreateResponse) -> Request(String) {
+  internal.post_request(config, "/responses", create_response_to_json(params))
 }
 
 /// Parse the response from creating a response.
@@ -4717,10 +4590,7 @@ pub fn create_response_response(
 }
 
 /// Build a request to retrieve a response by ID.
-pub fn retrieve_request(
-  config: Config,
-  response_id: String,
-) -> Request(String) {
+pub fn retrieve_request(config: Config, response_id: String) -> Request(String) {
   internal.get_request(config, "/responses/" <> response_id)
 }
 
@@ -4732,10 +4602,7 @@ pub fn retrieve_response(
 }
 
 /// Build a request to delete a response by ID.
-pub fn delete_request(
-  config: Config,
-  response_id: String,
-) -> Request(String) {
+pub fn delete_request(config: Config, response_id: String) -> Request(String) {
   internal.delete_request(config, "/responses/" <> response_id)
 }
 
@@ -4747,10 +4614,7 @@ pub fn delete_response(
 }
 
 /// Build a request to cancel a background response.
-pub fn cancel_request(
-  config: Config,
-  response_id: String,
-) -> Request(String) {
+pub fn cancel_request(config: Config, response_id: String) -> Request(String) {
   internal.post_request(
     config,
     "/responses/" <> response_id <> "/cancel",
@@ -4770,10 +4634,7 @@ pub fn list_input_items_request(
   config: Config,
   response_id: String,
 ) -> Request(String) {
-  internal.get_request(
-    config,
-    "/responses/" <> response_id <> "/input_items",
-  )
+  internal.get_request(config, "/responses/" <> response_id <> "/input_items")
 }
 
 /// Parse the response from listing input items.
@@ -4799,10 +4660,7 @@ pub fn get_input_token_counts_response(
 }
 
 /// Build a request to compact a conversation.
-pub fn compact_request(
-  config: Config,
-  body: json.Json,
-) -> Request(String) {
+pub fn compact_request(config: Config, body: json.Json) -> Request(String) {
   internal.post_request(config, "/responses/compact", body)
 }
 

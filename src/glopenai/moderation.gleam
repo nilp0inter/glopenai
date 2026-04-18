@@ -1,5 +1,4 @@
 /// Moderations API: classify text and images for potentially harmful content.
-
 import gleam/dynamic/decode
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
@@ -33,10 +32,7 @@ pub type ModInputType {
 
 /// Request to create a moderation.
 pub type CreateModerationRequest {
-  CreateModerationRequest(
-    input: ModerationInput,
-    model: Option(String),
-  )
+  CreateModerationRequest(input: ModerationInput, model: Option(String))
 }
 
 /// Whether each category was flagged.
@@ -143,9 +139,7 @@ pub fn mod_input_type_to_json(input_type: ModInputType) -> json.Json {
   })
 }
 
-pub fn moderation_content_part_to_json(
-  part: ModerationContentPart,
-) -> json.Json {
+pub fn moderation_content_part_to_json(part: ModerationContentPart) -> json.Json {
   case part {
     TextPart(text) ->
       json.object([
@@ -164,8 +158,7 @@ pub fn moderation_input_to_json(input: ModerationInput) -> json.Json {
   case input {
     StringInput(s) -> json.string(s)
     StringArrayInput(arr) -> json.array(arr, json.string)
-    MultiModalInput(parts) ->
-      json.array(parts, moderation_content_part_to_json)
+    MultiModalInput(parts) -> json.array(parts, moderation_content_part_to_json)
   }
 }
 
@@ -243,10 +236,7 @@ pub fn category_applied_input_types_to_json(
       json.array(types.self_harm_instructions, mod_input_type_to_json),
     ),
     #("sexual", json.array(types.sexual, mod_input_type_to_json)),
-    #(
-      "sexual/minors",
-      json.array(types.sexual_minors, mod_input_type_to_json),
-    ),
+    #("sexual/minors", json.array(types.sexual_minors, mod_input_type_to_json)),
     #("violence", json.array(types.violence, mod_input_type_to_json)),
     #(
       "violence/graphic",

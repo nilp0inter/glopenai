@@ -19,7 +19,8 @@ pub fn request_encoding_test() {
     fine_tuning.create_fine_tuning_job_request_to_json(request)
     |> json.to_string
 
-  let assert True = string.contains(encoded, "\"model\":\"gpt-4o-mini-2024-07-18\"")
+  let assert True =
+    string.contains(encoded, "\"model\":\"gpt-4o-mini-2024-07-18\"")
   let assert True = string.contains(encoded, "\"training_file\":\"file-abc\"")
   let assert True = string.contains(encoded, "\"suffix\":\"my-model\"")
 }
@@ -42,7 +43,8 @@ pub fn retrieve_request_building_test() {
   let http_req = fine_tuning.retrieve_request(cfg, "ftjob-abc")
 
   assert http_req.method == http.Get
-  let assert True = string.contains(http_req.path, "/fine_tuning/jobs/ftjob-abc")
+  let assert True =
+    string.contains(http_req.path, "/fine_tuning/jobs/ftjob-abc")
 }
 
 pub fn cancel_request_building_test() {
@@ -147,5 +149,8 @@ pub fn checkpoint_permission_request_test() {
 
   assert http_req.method == http.Delete
   let assert True =
-    string.contains(http_req.path, "/fine_tuning/checkpoints/ft:checkpoint:123/permissions/perm-abc")
+    string.contains(
+      http_req.path,
+      "/fine_tuning/checkpoints/ft:checkpoint:123/permissions/perm-abc",
+    )
 }

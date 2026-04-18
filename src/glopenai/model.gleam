@@ -1,5 +1,4 @@
 /// Models API: list, retrieve, and delete models.
-
 import gleam/dynamic/decode
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
@@ -12,12 +11,7 @@ import glopenai/internal
 
 /// Describes an OpenAI model offering that can be used with the API.
 pub type Model {
-  Model(
-    id: String,
-    object: String,
-    created: Int,
-    owned_by: String,
-  )
+  Model(id: String, object: String, created: Int, owned_by: String)
 }
 
 pub type ListModelResponse {
@@ -64,11 +58,7 @@ fn delete_model_response_decoder() -> decode.Decoder(DeleteModelResponse) {
   use id <- decode.field("id", decode.string)
   use object <- decode.field("object", decode.string)
   use deleted <- decode.field("deleted", decode.bool)
-  decode.success(DeleteModelResponse(
-    id: id,
-    object: object,
-    deleted: deleted,
-  ))
+  decode.success(DeleteModelResponse(id: id, object: object, deleted: deleted))
 }
 
 // --- Request/Response pairs (sans-io) ---
@@ -86,10 +76,7 @@ pub fn list_response(
 }
 
 /// Build a request to retrieve a specific model.
-pub fn retrieve_request(
-  config: Config,
-  model_id: String,
-) -> Request(String) {
+pub fn retrieve_request(config: Config, model_id: String) -> Request(String) {
   internal.get_request(config, "/models/" <> model_id)
 }
 
@@ -101,10 +88,7 @@ pub fn retrieve_response(
 }
 
 /// Build a request to delete a fine-tuned model.
-pub fn delete_request(
-  config: Config,
-  model_id: String,
-) -> Request(String) {
+pub fn delete_request(config: Config, model_id: String) -> Request(String) {
   internal.delete_request(config, "/models/" <> model_id)
 }
 

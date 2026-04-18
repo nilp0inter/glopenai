@@ -11,7 +11,6 @@
 /// 3. **Vector store file batches** (`batch_create_request`,
 ///    `batch_retrieve_request`, `batch_cancel_request`,
 ///    `batch_list_files_request`)
-
 import gleam/dict.{type Dict}
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode
@@ -47,10 +46,7 @@ pub fn static_chunking_strategy_to_json(
 pub fn static_chunking_strategy_decoder() -> decode.Decoder(
   StaticChunkingStrategy,
 ) {
-  use max_chunk_size_tokens <- decode.field(
-    "max_chunk_size_tokens",
-    decode.int,
-  )
+  use max_chunk_size_tokens <- decode.field("max_chunk_size_tokens", decode.int)
   use chunk_overlap_tokens <- decode.field("chunk_overlap_tokens", decode.int)
   decode.success(StaticChunkingStrategy(
     max_chunk_size_tokens: max_chunk_size_tokens,
@@ -749,10 +745,7 @@ fn vector_store_file_batch_object_decoder() -> decode.Decoder(
   use object <- decode.field("object", decode.string)
   use created_at <- decode.field("created_at", decode.int)
   use vector_store_id <- decode.field("vector_store_id", decode.string)
-  use status <- decode.field(
-    "status",
-    vector_store_file_batch_status_decoder(),
-  )
+  use status <- decode.field("status", vector_store_file_batch_status_decoder())
   use file_counts <- decode.field(
     "file_counts",
     vector_store_file_batch_counts_decoder(),
@@ -861,17 +854,10 @@ pub type RankingOptions {
 }
 
 pub fn ranking_options_to_json(options: RankingOptions) -> json.Json {
-  codec.object_with_optional(
-    [],
-    [
-      codec.optional_field("ranker", options.ranker, ranker_to_json),
-      codec.optional_field(
-        "score_threshold",
-        options.score_threshold,
-        json.float,
-      ),
-    ],
-  )
+  codec.object_with_optional([], [
+    codec.optional_field("ranker", options.ranker, ranker_to_json),
+    codec.optional_field("score_threshold", options.score_threshold, json.float),
+  ])
 }
 
 pub fn ranking_options_decoder() -> decode.Decoder(RankingOptions) {
@@ -1033,7 +1019,10 @@ pub fn with_chunking_strategy(
   request: CreateVectorStoreRequest,
   chunking_strategy: ChunkingStrategyRequestParam,
 ) -> CreateVectorStoreRequest {
-  CreateVectorStoreRequest(..request, chunking_strategy: Some(chunking_strategy))
+  CreateVectorStoreRequest(
+    ..request,
+    chunking_strategy: Some(chunking_strategy),
+  )
 }
 
 pub fn with_metadata(
@@ -1046,32 +1035,29 @@ pub fn with_metadata(
 pub fn create_vector_store_request_to_json(
   request: CreateVectorStoreRequest,
 ) -> json.Json {
-  codec.object_with_optional(
-    [],
-    [
-      codec.optional_field("file_ids", request.file_ids, fn(ids) {
-        json.array(ids, json.string)
-      }),
-      codec.optional_field("name", request.name, json.string),
-      codec.optional_field("description", request.description, json.string),
-      codec.optional_field(
-        "expires_after",
-        request.expires_after,
-        vector_store_expiration_after_to_json,
-      ),
-      codec.optional_field(
-        "chunking_strategy",
-        request.chunking_strategy,
-        chunking_strategy_request_param_to_json,
-      ),
-      codec.optional_field("metadata", request.metadata, fn(metadata) {
-        json.object(
-          dict.to_list(metadata)
-          |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-        )
-      }),
-    ],
-  )
+  codec.object_with_optional([], [
+    codec.optional_field("file_ids", request.file_ids, fn(ids) {
+      json.array(ids, json.string)
+    }),
+    codec.optional_field("name", request.name, json.string),
+    codec.optional_field("description", request.description, json.string),
+    codec.optional_field(
+      "expires_after",
+      request.expires_after,
+      vector_store_expiration_after_to_json,
+    ),
+    codec.optional_field(
+      "chunking_strategy",
+      request.chunking_strategy,
+      chunking_strategy_request_param_to_json,
+    ),
+    codec.optional_field("metadata", request.metadata, fn(metadata) {
+      json.object(
+        dict.to_list(metadata)
+        |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
+      )
+    }),
+  ])
 }
 
 // --- UpdateVectorStoreRequest ---
@@ -1112,23 +1098,20 @@ pub fn update_with_metadata(
 pub fn update_vector_store_request_to_json(
   request: UpdateVectorStoreRequest,
 ) -> json.Json {
-  codec.object_with_optional(
-    [],
-    [
-      codec.optional_field("name", request.name, json.string),
-      codec.optional_field(
-        "expires_after",
-        request.expires_after,
-        vector_store_expiration_after_to_json,
-      ),
-      codec.optional_field("metadata", request.metadata, fn(metadata) {
-        json.object(
-          dict.to_list(metadata)
-          |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-        )
-      }),
-    ],
-  )
+  codec.object_with_optional([], [
+    codec.optional_field("name", request.name, json.string),
+    codec.optional_field(
+      "expires_after",
+      request.expires_after,
+      vector_store_expiration_after_to_json,
+    ),
+    codec.optional_field("metadata", request.metadata, fn(metadata) {
+      json.object(
+        dict.to_list(metadata)
+        |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
+      )
+    }),
+  ])
 }
 
 // --- CreateVectorStoreFileRequest ---
@@ -1141,9 +1124,7 @@ pub type CreateVectorStoreFileRequest {
   )
 }
 
-pub fn new_create_file_request(
-  file_id: String,
-) -> CreateVectorStoreFileRequest {
+pub fn new_create_file_request(file_id: String) -> CreateVectorStoreFileRequest {
   CreateVectorStoreFileRequest(
     file_id: file_id,
     chunking_strategy: None,
@@ -1171,21 +1152,18 @@ pub fn file_with_attributes(
 pub fn create_vector_store_file_request_to_json(
   request: CreateVectorStoreFileRequest,
 ) -> json.Json {
-  codec.object_with_optional(
-    [#("file_id", json.string(request.file_id))],
-    [
-      codec.optional_field(
-        "chunking_strategy",
-        request.chunking_strategy,
-        chunking_strategy_request_param_to_json,
-      ),
-      codec.optional_field(
-        "attributes",
-        request.attributes,
-        vector_store_file_attributes_to_json,
-      ),
-    ],
-  )
+  codec.object_with_optional([#("file_id", json.string(request.file_id))], [
+    codec.optional_field(
+      "chunking_strategy",
+      request.chunking_strategy,
+      chunking_strategy_request_param_to_json,
+    ),
+    codec.optional_field(
+      "attributes",
+      request.attributes,
+      vector_store_file_attributes_to_json,
+    ),
+  ])
 }
 
 // --- UpdateVectorStoreFileAttributesRequest ---
@@ -1256,27 +1234,24 @@ pub fn batch_with_attributes(
 pub fn create_vector_store_file_batch_request_to_json(
   request: CreateVectorStoreFileBatchRequest,
 ) -> json.Json {
-  codec.object_with_optional(
-    [],
-    [
-      codec.optional_field("file_ids", request.file_ids, fn(ids) {
-        json.array(ids, json.string)
-      }),
-      codec.optional_field("files", request.files, fn(files) {
-        json.array(files, create_vector_store_file_request_to_json)
-      }),
-      codec.optional_field(
-        "chunking_strategy",
-        request.chunking_strategy,
-        chunking_strategy_request_param_to_json,
-      ),
-      codec.optional_field(
-        "attributes",
-        request.attributes,
-        vector_store_file_attributes_to_json,
-      ),
-    ],
-  )
+  codec.object_with_optional([], [
+    codec.optional_field("file_ids", request.file_ids, fn(ids) {
+      json.array(ids, json.string)
+    }),
+    codec.optional_field("files", request.files, fn(files) {
+      json.array(files, create_vector_store_file_request_to_json)
+    }),
+    codec.optional_field(
+      "chunking_strategy",
+      request.chunking_strategy,
+      chunking_strategy_request_param_to_json,
+    ),
+    codec.optional_field(
+      "attributes",
+      request.attributes,
+      vector_store_file_attributes_to_json,
+    ),
+  ])
 }
 
 // --- VectorStoreSearchRequest ---
@@ -1337,16 +1312,8 @@ pub fn vector_store_search_request_to_json(
   codec.object_with_optional(
     [#("query", vector_store_search_query_to_json(request.query))],
     [
-      codec.optional_field(
-        "rewrite_query",
-        request.rewrite_query,
-        json.bool,
-      ),
-      codec.optional_field(
-        "max_num_results",
-        request.max_num_results,
-        json.int,
-      ),
+      codec.optional_field("rewrite_query", request.rewrite_query, json.bool),
+      codec.optional_field("max_num_results", request.max_num_results, json.int),
       codec.optional_field("filters", request.filters, filter_to_json),
       codec.optional_field(
         "ranking_options",
@@ -1644,20 +1611,14 @@ pub fn file_delete_request(
 pub fn file_delete_response(
   response: Response(String),
 ) -> Result(DeleteVectorStoreFileResponse, GlopenaiError) {
-  internal.parse_response(
-    response,
-    delete_vector_store_file_response_decoder(),
-  )
+  internal.parse_response(response, delete_vector_store_file_response_decoder())
 }
 
 pub fn file_list_request(
   config: Config,
   vector_store_id: String,
 ) -> Request(String) {
-  internal.get_request(
-    config,
-    "/vector_stores/" <> vector_store_id <> "/files",
-  )
+  internal.get_request(config, "/vector_stores/" <> vector_store_id <> "/files")
 }
 
 pub fn file_list_request_with_query(
@@ -1665,10 +1626,7 @@ pub fn file_list_request_with_query(
   vector_store_id: String,
   query: ListVectorStoreFilesQuery,
 ) -> Request(String) {
-  internal.get_request(
-    config,
-    "/vector_stores/" <> vector_store_id <> "/files",
-  )
+  internal.get_request(config, "/vector_stores/" <> vector_store_id <> "/files")
   |> request.set_query(list_vector_store_files_query_pairs(query))
 }
 

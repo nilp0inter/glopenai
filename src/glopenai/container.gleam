@@ -15,7 +15,6 @@
 /// - `file_retrieve_request` — `GET    /containers/{id}/files/{file_id}`
 /// - `file_delete_request`   — `DELETE /containers/{id}/files/{file_id}`
 /// - `file_content_request`  — `GET    /containers/{id}/files/{file_id}/content` — returns raw bytes
-
 import gleam/dynamic/decode
 import gleam/http
 import gleam/http/request.{type Request}
@@ -102,11 +101,10 @@ pub fn container_expires_after_to_json(
   ])
 }
 
-pub fn container_expires_after_decoder() -> decode.Decoder(ContainerExpiresAfter) {
-  use anchor <- decode.field(
-    "anchor",
-    container_expires_after_anchor_decoder(),
-  )
+pub fn container_expires_after_decoder() -> decode.Decoder(
+  ContainerExpiresAfter,
+) {
+  use anchor <- decode.field("anchor", container_expires_after_anchor_decoder())
   use minutes <- decode.field("minutes", decode.int)
   decode.success(ContainerExpiresAfter(anchor: anchor, minutes: minutes))
 }
@@ -194,7 +192,9 @@ pub type DeleteContainerResponse {
   DeleteContainerResponse(id: String, object: String, deleted: Bool)
 }
 
-fn delete_container_response_decoder() -> decode.Decoder(DeleteContainerResponse) {
+fn delete_container_response_decoder() -> decode.Decoder(
+  DeleteContainerResponse,
+) {
   use id <- decode.field("id", decode.string)
   use object <- decode.field("object", decode.string)
   use deleted <- decode.field("deleted", decode.bool)
@@ -219,7 +219,9 @@ pub type ContainerFileResource {
   )
 }
 
-pub fn container_file_resource_decoder() -> decode.Decoder(ContainerFileResource) {
+pub fn container_file_resource_decoder() -> decode.Decoder(
+  ContainerFileResource,
+) {
   use id <- decode.field("id", decode.string)
   use object <- decode.field("object", decode.string)
   use container_id <- decode.field("container_id", decode.string)
@@ -341,24 +343,21 @@ pub fn with_memory_limit(
 pub fn create_container_request_to_json(
   request: CreateContainerRequest,
 ) -> json.Json {
-  codec.object_with_optional(
-    [#("name", json.string(request.name))],
-    [
-      codec.optional_field("file_ids", request.file_ids, fn(ids) {
-        json.array(ids, json.string)
-      }),
-      codec.optional_field(
-        "expires_after",
-        request.expires_after,
-        container_expires_after_to_json,
-      ),
-      codec.optional_field(
-        "memory_limit",
-        request.memory_limit,
-        memory_limit_to_json,
-      ),
-    ],
-  )
+  codec.object_with_optional([#("name", json.string(request.name))], [
+    codec.optional_field("file_ids", request.file_ids, fn(ids) {
+      json.array(ids, json.string)
+    }),
+    codec.optional_field(
+      "expires_after",
+      request.expires_after,
+      container_expires_after_to_json,
+    ),
+    codec.optional_field(
+      "memory_limit",
+      request.memory_limit,
+      memory_limit_to_json,
+    ),
+  ])
 }
 
 // --- CreateContainerFileRequest (multipart body) ---
@@ -487,10 +486,7 @@ pub fn list_response(
   internal.parse_response(response, container_list_resource_decoder())
 }
 
-pub fn retrieve_request(
-  config: Config,
-  container_id: String,
-) -> Request(String) {
+pub fn retrieve_request(config: Config, container_id: String) -> Request(String) {
   internal.get_request(config, "/containers/" <> container_id)
 }
 
@@ -500,10 +496,7 @@ pub fn retrieve_response(
   internal.parse_response(response, container_resource_decoder())
 }
 
-pub fn delete_request(
-  config: Config,
-  container_id: String,
-) -> Request(String) {
+pub fn delete_request(config: Config, container_id: String) -> Request(String) {
   internal.delete_request(config, "/containers/" <> container_id)
 }
 

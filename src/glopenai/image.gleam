@@ -1,6 +1,5 @@
 /// Image generation API: create images from text prompts.
 /// Edit and variation endpoints require multipart uploads and are deferred.
-
 import gleam/dynamic/decode
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
@@ -286,9 +285,7 @@ pub fn image_output_format_to_json(format: ImageOutputFormat) -> json.Json {
   })
 }
 
-pub fn image_response_format_to_json(
-  format: ImageResponseFormat,
-) -> json.Json {
+pub fn image_response_format_to_json(format: ImageResponseFormat) -> json.Json {
   json.string(case format {
     Url -> "url"
     B64Json -> "b64_json"
@@ -303,45 +300,40 @@ pub fn image_background_to_json(background: ImageBackground) -> json.Json {
   })
 }
 
-pub fn create_image_request_to_json(
-  request: CreateImageRequest,
-) -> json.Json {
-  codec.object_with_optional(
-    [#("prompt", json.string(request.prompt))],
-    [
-      codec.optional_field("model", request.model, image_model_to_json),
-      codec.optional_field("n", request.n, json.int),
-      codec.optional_field("quality", request.quality, image_quality_to_json),
-      codec.optional_field(
-        "response_format",
-        request.response_format,
-        image_response_format_to_json,
-      ),
-      codec.optional_field(
-        "output_format",
-        request.output_format,
-        image_output_format_to_json,
-      ),
-      codec.optional_field(
-        "output_compression",
-        request.output_compression,
-        json.int,
-      ),
-      codec.optional_field("size", request.size, image_size_to_json),
-      codec.optional_field(
-        "moderation",
-        request.moderation,
-        image_moderation_to_json,
-      ),
-      codec.optional_field(
-        "background",
-        request.background,
-        image_background_to_json,
-      ),
-      codec.optional_field("style", request.style, image_style_to_json),
-      codec.optional_field("user", request.user, json.string),
-    ],
-  )
+pub fn create_image_request_to_json(request: CreateImageRequest) -> json.Json {
+  codec.object_with_optional([#("prompt", json.string(request.prompt))], [
+    codec.optional_field("model", request.model, image_model_to_json),
+    codec.optional_field("n", request.n, json.int),
+    codec.optional_field("quality", request.quality, image_quality_to_json),
+    codec.optional_field(
+      "response_format",
+      request.response_format,
+      image_response_format_to_json,
+    ),
+    codec.optional_field(
+      "output_format",
+      request.output_format,
+      image_output_format_to_json,
+    ),
+    codec.optional_field(
+      "output_compression",
+      request.output_compression,
+      json.int,
+    ),
+    codec.optional_field("size", request.size, image_size_to_json),
+    codec.optional_field(
+      "moderation",
+      request.moderation,
+      image_moderation_to_json,
+    ),
+    codec.optional_field(
+      "background",
+      request.background,
+      image_background_to_json,
+    ),
+    codec.optional_field("style", request.style, image_style_to_json),
+    codec.optional_field("user", request.user, json.string),
+  ])
 }
 
 // --- Decoders ---

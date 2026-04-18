@@ -8,7 +8,6 @@
 /// - `thread_retrieve_request` — `GET /chatkit/threads/{id}`
 /// - `thread_delete_request`  — `DELETE /chatkit/threads/{id}`
 /// - `thread_items_list_request` — `GET /chatkit/threads/{id}/items`
-
 import gleam/dict.{type Dict}
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode
@@ -130,13 +129,8 @@ pub type ChatSessionRateLimits {
 pub fn chat_session_rate_limits_decoder() -> decode.Decoder(
   ChatSessionRateLimits,
 ) {
-  use max_requests <- decode.field(
-    "max_requests_per_1_minute",
-    decode.int,
-  )
-  decode.success(ChatSessionRateLimits(
-    max_requests_per_1_minute: max_requests,
-  ))
+  use max_requests <- decode.field("max_requests_per_1_minute", decode.int)
+  decode.success(ChatSessionRateLimits(max_requests_per_1_minute: max_requests))
 }
 
 pub type ChatSessionAutomaticThreadTitling {
@@ -251,10 +245,7 @@ pub fn chat_session_resource_decoder() -> decode.Decoder(ChatSessionResource) {
     "rate_limits",
     chat_session_rate_limits_decoder(),
   )
-  use max_requests <- decode.field(
-    "max_requests_per_1_minute",
-    decode.int,
-  )
+  use max_requests <- decode.field("max_requests_per_1_minute", decode.int)
   use status <- decode.field("status", chat_session_status_decoder())
   use configuration <- decode.field(
     "chatkit_configuration",
@@ -287,10 +278,9 @@ pub fn new_workflow_tracing_param() -> WorkflowTracingParam {
 pub fn workflow_tracing_param_to_json(
   tracing: WorkflowTracingParam,
 ) -> json.Json {
-  codec.object_with_optional(
-    [],
-    [codec.optional_field("enabled", tracing.enabled, json.bool)],
-  )
+  codec.object_with_optional([], [
+    codec.optional_field("enabled", tracing.enabled, json.bool),
+  ])
 }
 
 pub type WorkflowParam {
@@ -328,22 +318,19 @@ pub fn workflow_param_with_tracing(
 }
 
 pub fn workflow_param_to_json(workflow: WorkflowParam) -> json.Json {
-  codec.object_with_optional(
-    [#("id", json.string(workflow.id))],
-    [
-      codec.optional_field("version", workflow.version, json.string),
-      codec.optional_field(
-        "state_variables",
-        workflow.state_variables,
-        state_variables_to_json,
-      ),
-      codec.optional_field(
-        "tracing",
-        workflow.tracing,
-        workflow_tracing_param_to_json,
-      ),
-    ],
-  )
+  codec.object_with_optional([#("id", json.string(workflow.id))], [
+    codec.optional_field("version", workflow.version, json.string),
+    codec.optional_field(
+      "state_variables",
+      workflow.state_variables,
+      state_variables_to_json,
+    ),
+    codec.optional_field(
+      "tracing",
+      workflow.tracing,
+      workflow_tracing_param_to_json,
+    ),
+  ])
 }
 
 pub type ExpiresAfterParam {
@@ -355,9 +342,7 @@ pub fn new_expires_after_param(seconds: Int) -> ExpiresAfterParam {
   ExpiresAfterParam(anchor: "created_at", seconds: seconds)
 }
 
-pub fn expires_after_param_to_json(
-  expires: ExpiresAfterParam,
-) -> json.Json {
+pub fn expires_after_param_to_json(expires: ExpiresAfterParam) -> json.Json {
   json.object([
     #("anchor", json.string(expires.anchor)),
     #("seconds", json.int(expires.seconds)),
@@ -369,16 +354,13 @@ pub type RateLimitsParam {
 }
 
 pub fn rate_limits_param_to_json(rate_limits: RateLimitsParam) -> json.Json {
-  codec.object_with_optional(
-    [],
-    [
-      codec.optional_field(
-        "max_requests_per_1_minute",
-        rate_limits.max_requests_per_1_minute,
-        json.int,
-      ),
-    ],
-  )
+  codec.object_with_optional([], [
+    codec.optional_field(
+      "max_requests_per_1_minute",
+      rate_limits.max_requests_per_1_minute,
+      json.int,
+    ),
+  ])
 }
 
 pub type AutomaticThreadTitlingParam {
@@ -388,10 +370,9 @@ pub type AutomaticThreadTitlingParam {
 pub fn automatic_thread_titling_param_to_json(
   param: AutomaticThreadTitlingParam,
 ) -> json.Json {
-  codec.object_with_optional(
-    [],
-    [codec.optional_field("enabled", param.enabled, json.bool)],
-  )
+  codec.object_with_optional([], [
+    codec.optional_field("enabled", param.enabled, json.bool),
+  ])
 }
 
 pub type FileUploadParam {
@@ -403,14 +384,11 @@ pub type FileUploadParam {
 }
 
 pub fn file_upload_param_to_json(param: FileUploadParam) -> json.Json {
-  codec.object_with_optional(
-    [],
-    [
-      codec.optional_field("enabled", param.enabled, json.bool),
-      codec.optional_field("max_file_size", param.max_file_size, json.int),
-      codec.optional_field("max_files", param.max_files, json.int),
-    ],
-  )
+  codec.object_with_optional([], [
+    codec.optional_field("enabled", param.enabled, json.bool),
+    codec.optional_field("max_file_size", param.max_file_size, json.int),
+    codec.optional_field("max_files", param.max_files, json.int),
+  ])
 }
 
 pub type HistoryParam {
@@ -418,13 +396,10 @@ pub type HistoryParam {
 }
 
 pub fn history_param_to_json(param: HistoryParam) -> json.Json {
-  codec.object_with_optional(
-    [],
-    [
-      codec.optional_field("enabled", param.enabled, json.bool),
-      codec.optional_field("recent_threads", param.recent_threads, json.int),
-    ],
-  )
+  codec.object_with_optional([], [
+    codec.optional_field("enabled", param.enabled, json.bool),
+    codec.optional_field("recent_threads", param.recent_threads, json.int),
+  ])
 }
 
 pub type ChatkitConfigurationParam {
@@ -438,26 +413,19 @@ pub type ChatkitConfigurationParam {
 pub fn chatkit_configuration_param_to_json(
   config: ChatkitConfigurationParam,
 ) -> json.Json {
-  codec.object_with_optional(
-    [],
-    [
-      codec.optional_field(
-        "automatic_thread_titling",
-        config.automatic_thread_titling,
-        automatic_thread_titling_param_to_json,
-      ),
-      codec.optional_field(
-        "file_upload",
-        config.file_upload,
-        file_upload_param_to_json,
-      ),
-      codec.optional_field(
-        "history",
-        config.history,
-        history_param_to_json,
-      ),
-    ],
-  )
+  codec.object_with_optional([], [
+    codec.optional_field(
+      "automatic_thread_titling",
+      config.automatic_thread_titling,
+      automatic_thread_titling_param_to_json,
+    ),
+    codec.optional_field(
+      "file_upload",
+      config.file_upload,
+      file_upload_param_to_json,
+    ),
+    codec.optional_field("history", config.history, history_param_to_json),
+  ])
 }
 
 pub type CreateChatSessionBody {
@@ -605,11 +573,7 @@ pub fn annotation_decoder() -> decode.Decoder(Annotation) {
       use source <- decode.field("source", url_annotation_source_decoder())
       decode.success(UrlAnnotation(source: source))
     }
-    _ ->
-      decode.failure(
-        FileAnnotation(FileAnnotationSource("")),
-        "Annotation",
-      )
+    _ -> decode.failure(FileAnnotation(FileAnnotationSource("")), "Annotation")
   }
 }
 
@@ -671,10 +635,7 @@ fn attachment_decoder() -> decode.Decoder(Attachment) {
   use id <- decode.field("id", decode.string)
   use name <- decode.field("name", decode.string)
   use mime_type <- decode.field("mime_type", decode.string)
-  use preview_url <- decode.field(
-    "preview_url",
-    decode.optional(decode.string),
-  )
+  use preview_url <- decode.field("preview_url", decode.optional(decode.string))
   decode.success(Attachment(
     attachment_type: attachment_type,
     id: id,
@@ -932,10 +893,7 @@ pub fn thread_item_decoder() -> decode.Decoder(ThreadItem) {
       ))
     }
     "chatkit.task_group" -> {
-      use tasks <- decode.field(
-        "tasks",
-        decode.list(task_group_task_decoder()),
-      )
+      use tasks <- decode.field("tasks", decode.list(task_group_task_decoder()))
       decode.success(TaskGroupItem(
         id: id,
         object: object,
@@ -977,11 +935,7 @@ pub type ThreadResource {
 
 pub fn thread_resource_decoder() -> decode.Decoder(ThreadResource) {
   use id <- decode.field("id", decode.string)
-  use object <- decode.optional_field(
-    "object",
-    "chatkit.thread",
-    decode.string,
-  )
+  use object <- decode.optional_field("object", "chatkit.thread", decode.string)
   use created_at <- decode.field("created_at", decode.int)
   use title <- decode.field("title", decode.optional(decode.string))
   // Status fields are flattened — pull them off the same decoder root.
@@ -1040,11 +994,7 @@ fn deleted_thread_resource_decoder() -> decode.Decoder(DeletedThreadResource) {
     decode.string,
   )
   use deleted <- decode.field("deleted", decode.bool)
-  decode.success(DeletedThreadResource(
-    id: id,
-    object: object,
-    deleted: deleted,
-  ))
+  decode.success(DeletedThreadResource(id: id, object: object, deleted: deleted))
 }
 
 pub type ThreadItemListResource {
@@ -1057,9 +1007,7 @@ pub type ThreadItemListResource {
   )
 }
 
-fn thread_item_list_resource_decoder() -> decode.Decoder(
-  ThreadItemListResource,
-) {
+fn thread_item_list_resource_decoder() -> decode.Decoder(ThreadItemListResource) {
   use object <- decode.optional_field("object", "list", decode.string)
   use data <- decode.field("data", decode.list(thread_item_decoder()))
   use first_id <- decode.field("first_id", decode.optional(decode.string))

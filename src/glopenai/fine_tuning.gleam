@@ -1,6 +1,5 @@
 /// Fine-tuning API: create, list, retrieve, cancel, pause, resume fine-tuning
 /// jobs, and manage events, checkpoints, and checkpoint permissions.
-
 import gleam/dynamic
 import gleam/dynamic/decode
 import gleam/http/request.{type Request}
@@ -153,11 +152,7 @@ pub type GraderTextSimilarity {
 }
 
 pub type GraderPython {
-  GraderPython(
-    name: String,
-    source: String,
-    image_tag: Option(String),
-  )
+  GraderPython(name: String, source: String, image_tag: Option(String))
 }
 
 pub type GraderScoreModelSamplingParams {
@@ -200,9 +195,7 @@ pub type FineTuneGrader {
 // ============================================================================
 
 pub type FineTuneSupervisedMethod {
-  FineTuneSupervisedMethod(
-    hyperparameters: FineTuneSupervisedHyperparameters,
-  )
+  FineTuneSupervisedMethod(hyperparameters: FineTuneSupervisedHyperparameters)
 }
 
 pub type FineTuneDpoMethod {
@@ -254,11 +247,7 @@ pub type FineTuningJobStatus {
 }
 
 pub type FineTuneJobError {
-  FineTuneJobError(
-    code: String,
-    message: String,
-    param: Option(String),
-  )
+  FineTuneJobError(code: String, message: String, param: Option(String))
 }
 
 pub type FineTuningJob {
@@ -453,10 +442,7 @@ pub fn with_validation_file(
   request: CreateFineTuningJobRequest,
   validation_file: String,
 ) -> CreateFineTuningJobRequest {
-  CreateFineTuningJobRequest(
-    ..request,
-    validation_file: Some(validation_file),
-  )
+  CreateFineTuningJobRequest(..request, validation_file: Some(validation_file))
 }
 
 pub fn with_integrations(
@@ -566,9 +552,7 @@ pub fn supervised_hyperparameters_to_json(
   ])
 }
 
-pub fn dpo_hyperparameters_to_json(
-  hp: FineTuneDpoHyperparameters,
-) -> json.Json {
+pub fn dpo_hyperparameters_to_json(hp: FineTuneDpoHyperparameters) -> json.Json {
   json.object([
     #("beta", beta_to_json(hp.beta)),
     #("batch_size", batch_size_to_json(hp.batch_size)),
@@ -594,10 +578,7 @@ pub fn reinforcement_hyperparameters_to_json(
       "reasoning_effort",
       fine_tune_reasoning_effort_to_json(hp.reasoning_effort),
     ),
-    #(
-      "compute_multiplier",
-      compute_multiplier_to_json(hp.compute_multiplier),
-    ),
+    #("compute_multiplier", compute_multiplier_to_json(hp.compute_multiplier)),
     #("eval_interval", eval_interval_to_json(hp.eval_interval)),
     #("eval_samples", eval_samples_to_json(hp.eval_samples)),
   ])
@@ -739,9 +720,7 @@ pub fn fine_tune_method_to_json(method: FineTuneMethod) -> json.Json {
           json.object([
             #(
               "hyperparameters",
-              supervised_hyperparameters_to_json(
-                supervised.hyperparameters,
-              ),
+              supervised_hyperparameters_to_json(supervised.hyperparameters),
             ),
           ]),
         ),
@@ -779,16 +758,13 @@ pub fn fine_tune_method_to_json(method: FineTuneMethod) -> json.Json {
 }
 
 pub fn wandb_to_json(wandb: WandB) -> json.Json {
-  codec.object_with_optional(
-    [#("project", json.string(wandb.project))],
-    [
-      codec.optional_field("name", wandb.name, json.string),
-      codec.optional_field("entity", wandb.entity, json.string),
-      codec.optional_field("tags", wandb.tags, fn(t) {
-        json.array(t, json.string)
-      }),
-    ],
-  )
+  codec.object_with_optional([#("project", json.string(wandb.project))], [
+    codec.optional_field("name", wandb.name, json.string),
+    codec.optional_field("entity", wandb.entity, json.string),
+    codec.optional_field("tags", wandb.tags, fn(t) {
+      json.array(t, json.string)
+    }),
+  ])
 }
 
 pub fn fine_tuning_integration_to_json(
@@ -800,9 +776,7 @@ pub fn fine_tuning_integration_to_json(
   ])
 }
 
-pub fn fine_tuning_job_status_to_json(
-  status: FineTuningJobStatus,
-) -> json.Json {
+pub fn fine_tuning_job_status_to_json(status: FineTuningJobStatus) -> json.Json {
   json.string(case status {
     ValidatingFiles -> "validating_files"
     Queued -> "queued"
@@ -841,11 +815,7 @@ pub fn create_fine_tuning_job_request_to_json(
       }),
       codec.optional_field("seed", request.seed, json.int),
       codec.optional_field("method", request.method, fine_tune_method_to_json),
-      codec.optional_field(
-        "metadata",
-        request.metadata,
-        codec.dynamic_to_json,
-      ),
+      codec.optional_field("metadata", request.metadata, codec.dynamic_to_json),
     ],
   )
 }
@@ -863,83 +833,107 @@ pub fn create_checkpoint_permission_request_to_json(
 // ============================================================================
 
 pub fn n_epochs_decoder() -> decode.Decoder(NEpochs) {
-  decode.one_of(decode.string |> decode.then(fn(s) {
-    case s {
-      "auto" -> decode.success(NEpochsAuto)
-      _ -> decode.failure(NEpochsAuto, "NEpochs")
-    }
-  }), [decode.int |> decode.then(fn(n) { decode.success(NEpochs(n)) })],
+  decode.one_of(
+    decode.string
+      |> decode.then(fn(s) {
+        case s {
+          "auto" -> decode.success(NEpochsAuto)
+          _ -> decode.failure(NEpochsAuto, "NEpochs")
+        }
+      }),
+    [decode.int |> decode.then(fn(n) { decode.success(NEpochs(n)) })],
   )
 }
 
 pub fn batch_size_decoder() -> decode.Decoder(BatchSize) {
-  decode.one_of(decode.string |> decode.then(fn(s) {
-    case s {
-      "auto" -> decode.success(BatchSizeAuto)
-      _ -> decode.failure(BatchSizeAuto, "BatchSize")
-    }
-  }), [decode.int |> decode.then(fn(n) { decode.success(BatchSize(n)) })],
+  decode.one_of(
+    decode.string
+      |> decode.then(fn(s) {
+        case s {
+          "auto" -> decode.success(BatchSizeAuto)
+          _ -> decode.failure(BatchSizeAuto, "BatchSize")
+        }
+      }),
+    [decode.int |> decode.then(fn(n) { decode.success(BatchSize(n)) })],
   )
 }
 
 pub fn learning_rate_multiplier_decoder() -> decode.Decoder(
   LearningRateMultiplier,
 ) {
-  decode.one_of(decode.string |> decode.then(fn(s) {
-    case s {
-      "auto" -> decode.success(LearningRateMultiplierAuto)
-      _ -> decode.failure(LearningRateMultiplierAuto, "LearningRateMultiplier")
-    }
-  }), [
-    decode.float
-    |> decode.then(fn(f) {
-      decode.success(LearningRateMultiplier(f))
-    }),
-  ])
+  decode.one_of(
+    decode.string
+      |> decode.then(fn(s) {
+        case s {
+          "auto" -> decode.success(LearningRateMultiplierAuto)
+          _ ->
+            decode.failure(LearningRateMultiplierAuto, "LearningRateMultiplier")
+        }
+      }),
+    [
+      decode.float
+      |> decode.then(fn(f) { decode.success(LearningRateMultiplier(f)) }),
+    ],
+  )
 }
 
 pub fn beta_decoder() -> decode.Decoder(Beta) {
-  decode.one_of(decode.string |> decode.then(fn(s) {
-    case s {
-      "auto" -> decode.success(BetaAuto)
-      _ -> decode.failure(BetaAuto, "Beta")
-    }
-  }), [decode.float |> decode.then(fn(f) { decode.success(Beta(f)) })],
+  decode.one_of(
+    decode.string
+      |> decode.then(fn(s) {
+        case s {
+          "auto" -> decode.success(BetaAuto)
+          _ -> decode.failure(BetaAuto, "Beta")
+        }
+      }),
+    [decode.float |> decode.then(fn(f) { decode.success(Beta(f)) })],
   )
 }
 
 pub fn compute_multiplier_decoder() -> decode.Decoder(ComputeMultiplier) {
-  decode.one_of(decode.string |> decode.then(fn(s) {
-    case s {
-      "auto" -> decode.success(ComputeMultiplierAuto)
-      _ -> decode.failure(ComputeMultiplierAuto, "ComputeMultiplier")
-    }
-  }), [
-    decode.float
-    |> decode.then(fn(f) { decode.success(ComputeMultiplier(f)) }),
-  ])
+  decode.one_of(
+    decode.string
+      |> decode.then(fn(s) {
+        case s {
+          "auto" -> decode.success(ComputeMultiplierAuto)
+          _ -> decode.failure(ComputeMultiplierAuto, "ComputeMultiplier")
+        }
+      }),
+    [
+      decode.float
+      |> decode.then(fn(f) { decode.success(ComputeMultiplier(f)) }),
+    ],
+  )
 }
 
 pub fn eval_interval_decoder() -> decode.Decoder(EvalInterval) {
-  decode.one_of(decode.string |> decode.then(fn(s) {
-    case s {
-      "auto" -> decode.success(EvalIntervalAuto)
-      _ -> decode.failure(EvalIntervalAuto, "EvalInterval")
-    }
-  }), [
-    decode.int |> decode.then(fn(n) { decode.success(EvalInterval(n)) }),
-  ])
+  decode.one_of(
+    decode.string
+      |> decode.then(fn(s) {
+        case s {
+          "auto" -> decode.success(EvalIntervalAuto)
+          _ -> decode.failure(EvalIntervalAuto, "EvalInterval")
+        }
+      }),
+    [
+      decode.int |> decode.then(fn(n) { decode.success(EvalInterval(n)) }),
+    ],
+  )
 }
 
 pub fn eval_samples_decoder() -> decode.Decoder(EvalSamples) {
-  decode.one_of(decode.string |> decode.then(fn(s) {
-    case s {
-      "auto" -> decode.success(EvalSamplesAuto)
-      _ -> decode.failure(EvalSamplesAuto, "EvalSamples")
-    }
-  }), [
-    decode.int |> decode.then(fn(n) { decode.success(EvalSamples(n)) }),
-  ])
+  decode.one_of(
+    decode.string
+      |> decode.then(fn(s) {
+        case s {
+          "auto" -> decode.success(EvalSamplesAuto)
+          _ -> decode.failure(EvalSamplesAuto, "EvalSamples")
+        }
+      }),
+    [
+      decode.int |> decode.then(fn(n) { decode.success(EvalSamples(n)) }),
+    ],
+  )
 }
 
 pub fn fine_tune_reasoning_effort_decoder() -> decode.Decoder(
@@ -1006,10 +1000,7 @@ pub fn reinforcement_hyperparameters_decoder() -> decode.Decoder(
     "compute_multiplier",
     compute_multiplier_decoder(),
   )
-  use eval_interval <- decode.field(
-    "eval_interval",
-    eval_interval_decoder(),
-  )
+  use eval_interval <- decode.field("eval_interval", eval_interval_decoder())
   use eval_samples <- decode.field("eval_samples", eval_samples_decoder())
   decode.success(FineTuneReinforcementHyperparameters(
     batch_size: batch_size,
@@ -1078,11 +1069,7 @@ pub fn eval_item_decoder() -> decode.Decoder(EvalItem) {
 pub fn grader_score_model_sampling_params_decoder() -> decode.Decoder(
   GraderScoreModelSamplingParams,
 ) {
-  use seed <- decode.optional_field(
-    "seed",
-    None,
-    decode.optional(decode.int),
-  )
+  use seed <- decode.optional_field("seed", None, decode.optional(decode.int))
   use top_p <- decode.optional_field(
     "top_p",
     None,
@@ -1123,12 +1110,14 @@ pub fn fine_tune_grader_decoder() -> decode.Decoder(FineTuneGrader) {
         "operation",
         grader_string_check_operation_decoder(),
       )
-      decode.success(StringCheckGrader(GraderStringCheck(
-        name: name,
-        input: input,
-        reference: reference,
-        operation: operation,
-      )))
+      decode.success(
+        StringCheckGrader(GraderStringCheck(
+          name: name,
+          input: input,
+          reference: reference,
+          operation: operation,
+        )),
+      )
     }
     "text_similarity" -> {
       use name <- decode.field("name", decode.string)
@@ -1138,12 +1127,14 @@ pub fn fine_tune_grader_decoder() -> decode.Decoder(FineTuneGrader) {
         "evaluation_metric",
         grader_text_similarity_metric_decoder(),
       )
-      decode.success(TextSimilarityGrader(GraderTextSimilarity(
-        name: name,
-        input: input,
-        reference: reference,
-        evaluation_metric: evaluation_metric,
-      )))
+      decode.success(
+        TextSimilarityGrader(GraderTextSimilarity(
+          name: name,
+          input: input,
+          reference: reference,
+          evaluation_metric: evaluation_metric,
+        )),
+      )
     }
     "python" -> {
       use name <- decode.field("name", decode.string)
@@ -1153,11 +1144,13 @@ pub fn fine_tune_grader_decoder() -> decode.Decoder(FineTuneGrader) {
         None,
         decode.optional(decode.string),
       )
-      decode.success(PythonGrader(GraderPython(
-        name: name,
-        source: source,
-        image_tag: image_tag,
-      )))
+      decode.success(
+        PythonGrader(GraderPython(
+          name: name,
+          source: source,
+          image_tag: image_tag,
+        )),
+      )
     }
     "score_model" -> {
       use name <- decode.field("name", decode.string)
@@ -1173,32 +1166,31 @@ pub fn fine_tune_grader_decoder() -> decode.Decoder(FineTuneGrader) {
         None,
         decode.optional(decode.list(decode.float)),
       )
-      decode.success(ScoreModelGrader(GraderScoreModel(
-        name: name,
-        model: model,
-        input: input,
-        sampling_params: sampling_params,
-        range: range,
-      )))
+      decode.success(
+        ScoreModelGrader(GraderScoreModel(
+          name: name,
+          model: model,
+          input: input,
+          sampling_params: sampling_params,
+          range: range,
+        )),
+      )
     }
     "multi" -> {
       use name <- decode.field("name", decode.string)
       use graders <- decode.field("graders", decode.dynamic)
-      use calculate_output <- decode.field(
-        "calculate_output",
-        decode.string,
-      )
+      use calculate_output <- decode.field("calculate_output", decode.string)
       decode.success(MultiGrader(
         name: name,
         graders: graders,
         calculate_output: calculate_output,
       ))
     }
-    _ -> decode.failure(PythonGrader(GraderPython(
-      name: "",
-      source: "",
-      image_tag: None,
-    )), "FineTuneGrader")
+    _ ->
+      decode.failure(
+        PythonGrader(GraderPython(name: "", source: "", image_tag: None)),
+        "FineTuneGrader",
+      )
   }
 }
 
@@ -1223,15 +1215,19 @@ pub fn fine_tune_method_decoder() -> decode.Decoder(FineTuneMethod) {
       )
       decode.success(Reinforcement(reinforcement: reinforcement))
     }
-    _ -> decode.failure(Supervised(
-      supervised: FineTuneSupervisedMethod(
-        hyperparameters: FineTuneSupervisedHyperparameters(
-          batch_size: BatchSizeAuto,
-          learning_rate_multiplier: LearningRateMultiplierAuto,
-          n_epochs: NEpochsAuto,
+    _ ->
+      decode.failure(
+        Supervised(
+          supervised: FineTuneSupervisedMethod(
+            hyperparameters: FineTuneSupervisedHyperparameters(
+              batch_size: BatchSizeAuto,
+              learning_rate_multiplier: LearningRateMultiplierAuto,
+              n_epochs: NEpochsAuto,
+            ),
+          ),
         ),
-      ),
-    ), "FineTuneMethod")
+        "FineTuneMethod",
+      )
   }
 }
 
@@ -1284,12 +1280,7 @@ pub fn wandb_decoder() -> decode.Decoder(WandB) {
     None,
     decode.optional(decode.list(decode.string)),
   )
-  decode.success(WandB(
-    project: project,
-    name: name,
-    entity: entity,
-    tags: tags,
-  ))
+  decode.success(WandB(project: project, name: name, entity: entity, tags: tags))
 }
 
 pub fn fine_tuning_integration_decoder() -> decode.Decoder(
@@ -1299,9 +1290,7 @@ pub fn fine_tuning_integration_decoder() -> decode.Decoder(
   decode.success(FineTuningIntegration(wandb: wandb))
 }
 
-pub fn fine_tuning_job_status_decoder() -> decode.Decoder(
-  FineTuningJobStatus,
-) {
+pub fn fine_tuning_job_status_decoder() -> decode.Decoder(FineTuningJobStatus) {
   use value <- decode.then(decode.string)
   case value {
     "validating_files" -> decode.success(ValidatingFiles)
@@ -1322,11 +1311,7 @@ pub fn fine_tune_job_error_decoder() -> decode.Decoder(FineTuneJobError) {
     None,
     decode.optional(decode.string),
   )
-  decode.success(FineTuneJobError(
-    code: code,
-    message: message,
-    param: param,
-  ))
+  decode.success(FineTuneJobError(code: code, message: message, param: param))
 }
 
 pub fn fine_tuning_job_decoder() -> decode.Decoder(FineTuningJob) {
@@ -1354,10 +1339,7 @@ pub fn fine_tuning_job_decoder() -> decode.Decoder(FineTuningJob) {
   use model <- decode.field("model", decode.string)
   use object <- decode.field("object", decode.string)
   use organization_id <- decode.field("organization_id", decode.string)
-  use result_files <- decode.field(
-    "result_files",
-    decode.list(decode.string),
-  )
+  use result_files <- decode.field("result_files", decode.list(decode.string))
   use status <- decode.field("status", fine_tuning_job_status_decoder())
   use trained_tokens <- decode.optional_field(
     "trained_tokens",
@@ -1435,9 +1417,7 @@ pub fn fine_tuning_job_event_type_decoder() -> decode.Decoder(
   }
 }
 
-pub fn fine_tuning_job_event_decoder() -> decode.Decoder(
-  FineTuningJobEvent,
-) {
+pub fn fine_tuning_job_event_decoder() -> decode.Decoder(FineTuningJobEvent) {
   use id <- decode.field("id", decode.string)
   use created_at <- decode.field("created_at", decode.int)
   use level <- decode.field("level", event_level_decoder())
@@ -1508,10 +1488,7 @@ pub fn fine_tuning_job_checkpoint_decoder() -> decode.Decoder(
     "metrics",
     fine_tuning_job_checkpoint_metrics_decoder(),
   )
-  use fine_tuning_job_id <- decode.field(
-    "fine_tuning_job_id",
-    decode.string,
-  )
+  use fine_tuning_job_id <- decode.field("fine_tuning_job_id", decode.string)
   use object <- decode.field("object", decode.string)
   decode.success(FineTuningJobCheckpoint(
     id: id,
@@ -1542,10 +1519,7 @@ pub fn fine_tuning_checkpoint_permission_decoder() -> decode.Decoder(
 fn list_paginated_fine_tuning_jobs_response_decoder() -> decode.Decoder(
   ListPaginatedFineTuningJobsResponse,
 ) {
-  use data <- decode.field(
-    "data",
-    decode.list(fine_tuning_job_decoder()),
-  )
+  use data <- decode.field("data", decode.list(fine_tuning_job_decoder()))
   use has_more <- decode.field("has_more", decode.bool)
   use object <- decode.field("object", decode.string)
   decode.success(ListPaginatedFineTuningJobsResponse(
@@ -1558,15 +1532,9 @@ fn list_paginated_fine_tuning_jobs_response_decoder() -> decode.Decoder(
 fn list_fine_tuning_job_events_response_decoder() -> decode.Decoder(
   ListFineTuningJobEventsResponse,
 ) {
-  use data <- decode.field(
-    "data",
-    decode.list(fine_tuning_job_event_decoder()),
-  )
+  use data <- decode.field("data", decode.list(fine_tuning_job_event_decoder()))
   use object <- decode.field("object", decode.string)
-  decode.success(ListFineTuningJobEventsResponse(
-    data: data,
-    object: object,
-  ))
+  decode.success(ListFineTuningJobEventsResponse(data: data, object: object))
 }
 
 fn list_fine_tuning_job_checkpoints_response_decoder() -> decode.Decoder(
@@ -1681,10 +1649,7 @@ pub fn retrieve_request(
   config: Config,
   fine_tuning_job_id: String,
 ) -> Request(String) {
-  internal.get_request(
-    config,
-    "/fine_tuning/jobs/" <> fine_tuning_job_id,
-  )
+  internal.get_request(config, "/fine_tuning/jobs/" <> fine_tuning_job_id)
 }
 
 /// Parse the response from retrieving a fine-tuning job.
@@ -1801,9 +1766,7 @@ pub fn create_checkpoint_permission_request(
 ) -> Request(String) {
   internal.post_request(
     config,
-    "/fine_tuning/checkpoints/"
-      <> fine_tuned_model_checkpoint
-      <> "/permissions",
+    "/fine_tuning/checkpoints/" <> fine_tuned_model_checkpoint <> "/permissions",
     create_checkpoint_permission_request_to_json(params),
   )
 }
@@ -1825,9 +1788,7 @@ pub fn list_checkpoint_permissions_request(
 ) -> Request(String) {
   internal.get_request(
     config,
-    "/fine_tuning/checkpoints/"
-      <> fine_tuned_model_checkpoint
-      <> "/permissions",
+    "/fine_tuning/checkpoints/" <> fine_tuned_model_checkpoint <> "/permissions",
   )
 }
 

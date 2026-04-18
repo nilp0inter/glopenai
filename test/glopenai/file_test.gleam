@@ -72,8 +72,7 @@ pub fn delete_request_builds_test() {
 }
 
 pub fn delete_response_decodes_test() {
-  let body =
-    "{\"id\":\"file-abc123\",\"object\":\"file\",\"deleted\":true}"
+  let body = "{\"id\":\"file-abc123\",\"object\":\"file\",\"deleted\":true}"
   let resp = response.new(200) |> response.set_body(body)
 
   let assert Ok(result) = file.delete_response(resp)
@@ -86,13 +85,11 @@ pub fn content_request_builds_test() {
   let req = file.content_request(cfg, "file-abc123")
 
   assert req.method == http.Get
-  let assert True =
-    string.contains(req.path, "/files/file-abc123/content")
+  let assert True = string.contains(req.path, "/files/file-abc123/content")
 }
 
 pub fn content_response_success_test() {
-  let resp =
-    response.new(200) |> response.set_body("line1\nline2\nline3")
+  let resp = response.new(200) |> response.set_body("line1\nline2\nline3")
 
   let assert Ok(body) = file.content_response(resp)
   assert body == "line1\nline2\nline3"

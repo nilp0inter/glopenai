@@ -64,8 +64,7 @@ pub fn create_response_decodes_url_test() {
 }
 
 pub fn create_response_decodes_b64_test() {
-  let body =
-    "{\"created\":1234567890,\"data\":[{\"b64_json\":\"aGVsbG8=\"}]}"
+  let body = "{\"created\":1234567890,\"data\":[{\"b64_json\":\"aGVsbG8=\"}]}"
   let resp = response.new(200) |> response.set_body(body)
 
   let assert Ok(result) = image.create_response(resp)

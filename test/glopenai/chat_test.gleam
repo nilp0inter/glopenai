@@ -35,9 +35,9 @@ pub fn tool_message_encodes_test() {
 
 pub fn tool_choice_function_encodes_test() {
   let choice =
-    chat.ToolChoiceFunctionChoice(
-      function: shared.FunctionName(name: "get_weather"),
-    )
+    chat.ToolChoiceFunctionChoice(function: shared.FunctionName(
+      name: "get_weather",
+    ))
   let encoded = chat.tool_choice_to_json(choice) |> json.to_string
 
   let assert True = string.contains(encoded, "\"type\":\"function\"")

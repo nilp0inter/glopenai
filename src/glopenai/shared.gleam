@@ -1,5 +1,4 @@
 /// Shared types used across multiple API modules.
-
 import gleam/dynamic
 import gleam/dynamic/decode
 import gleam/json
@@ -42,10 +41,9 @@ pub type ImageUrl {
 }
 
 pub fn image_url_to_json(image_url: ImageUrl) -> json.Json {
-  codec.object_with_optional(
-    [#("url", json.string(image_url.url))],
-    [codec.optional_field("detail", image_url.detail, image_detail_to_json)],
-  )
+  codec.object_with_optional([#("url", json.string(image_url.url))], [
+    codec.optional_field("detail", image_url.detail, image_detail_to_json),
+  ])
 }
 
 pub fn image_url_decoder() -> decode.Decoder(ImageUrl) {
@@ -70,22 +68,15 @@ pub type FunctionObject {
 }
 
 pub fn function_object_to_json(function: FunctionObject) -> json.Json {
-  codec.object_with_optional(
-    [#("name", json.string(function.name))],
-    [
-      codec.optional_field(
-        "description",
-        function.description,
-        json.string,
-      ),
-      codec.optional_field(
-        "parameters",
-        function.parameters,
-        codec.dynamic_to_json,
-      ),
-      codec.optional_field("strict", function.strict, json.bool),
-    ],
-  )
+  codec.object_with_optional([#("name", json.string(function.name))], [
+    codec.optional_field("description", function.description, json.string),
+    codec.optional_field(
+      "parameters",
+      function.parameters,
+      codec.dynamic_to_json,
+    ),
+    codec.optional_field("strict", function.strict, json.bool),
+  ])
 }
 
 pub fn function_object_decoder() -> decode.Decoder(FunctionObject) {
@@ -215,22 +206,11 @@ pub fn response_format_to_json(format: ResponseFormat) -> json.Json {
 pub fn response_format_json_schema_to_json(
   schema: ResponseFormatJsonSchema,
 ) -> json.Json {
-  codec.object_with_optional(
-    [#("name", json.string(schema.name))],
-    [
-      codec.optional_field(
-        "description",
-        schema.description,
-        json.string,
-      ),
-      codec.optional_field(
-        "schema",
-        schema.schema,
-        codec.dynamic_to_json,
-      ),
-      codec.optional_field("strict", schema.strict, json.bool),
-    ],
-  )
+  codec.object_with_optional([#("name", json.string(schema.name))], [
+    codec.optional_field("description", schema.description, json.string),
+    codec.optional_field("schema", schema.schema, codec.dynamic_to_json),
+    codec.optional_field("strict", schema.strict, json.bool),
+  ])
 }
 
 pub fn response_format_decoder() -> decode.Decoder(ResponseFormat) {
@@ -279,10 +259,7 @@ pub fn response_format_json_schema_decoder() -> decode.Decoder(
 // --- CompletionUsage ---
 
 pub type PromptTokensDetails {
-  PromptTokensDetails(
-    audio_tokens: Option(Int),
-    cached_tokens: Option(Int),
-  )
+  PromptTokensDetails(audio_tokens: Option(Int), cached_tokens: Option(Int))
 }
 
 pub type CompletionTokensDetails {
@@ -326,9 +303,7 @@ pub fn completion_usage_to_json(usage: CompletionUsage) -> json.Json {
   )
 }
 
-pub fn prompt_tokens_details_to_json(
-  details: PromptTokensDetails,
-) -> json.Json {
+pub fn prompt_tokens_details_to_json(details: PromptTokensDetails) -> json.Json {
   json.object([
     #("audio_tokens", json.nullable(details.audio_tokens, json.int)),
     #("cached_tokens", json.nullable(details.cached_tokens, json.int)),
@@ -344,10 +319,7 @@ pub fn completion_tokens_details_to_json(
       json.nullable(details.accepted_prediction_tokens, json.int),
     ),
     #("audio_tokens", json.nullable(details.audio_tokens, json.int)),
-    #(
-      "reasoning_tokens",
-      json.nullable(details.reasoning_tokens, json.int),
-    ),
+    #("reasoning_tokens", json.nullable(details.reasoning_tokens, json.int)),
     #(
       "rejected_prediction_tokens",
       json.nullable(details.rejected_prediction_tokens, json.int),

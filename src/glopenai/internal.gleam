@@ -13,7 +13,11 @@ import glopenai/error.{
 }
 
 /// Build a POST request with a JSON body.
-pub fn post_request(config: Config, path: String, body: json.Json) -> Request(String) {
+pub fn post_request(
+  config: Config,
+  path: String,
+  body: json.Json,
+) -> Request(String) {
   build_request(config, http.Post, path)
   |> request.set_body(json.to_string(body))
   |> request.prepend_header("content-type", "application/json")
@@ -65,12 +69,7 @@ pub type MultipartPart {
   FieldPart(name: String, value: String)
   /// A file upload. `data` carries the raw bytes; `content_type` becomes the
   /// part's `Content-Type` header.
-  FilePart(
-    name: String,
-    filename: String,
-    content_type: String,
-    data: BitArray,
-  )
+  FilePart(name: String, filename: String, content_type: String, data: BitArray)
 }
 
 /// Build a `multipart/form-data` request. Returns `Request(BitArray)` because
@@ -110,17 +109,14 @@ pub fn build_multipart_body(
       let payload = part_body(part)
       bit_array.concat([acc, dash_boundary, header, payload, crlf])
     })
-  let closing =
-    bit_array.from_string("--" <> boundary <> "--\r\n")
+  let closing = bit_array.from_string("--" <> boundary <> "--\r\n")
   bit_array.concat([parts_bytes, closing])
 }
 
 fn part_header(part: MultipartPart) -> String {
   case part {
     FieldPart(name, _) ->
-      "Content-Disposition: form-data; name=\""
-      <> name
-      <> "\"\r\n\r\n"
+      "Content-Disposition: form-data; name=\"" <> name <> "\"\r\n\r\n"
     FilePart(name, filename, content_type, _) ->
       "Content-Disposition: form-data; name=\""
       <> name
@@ -154,10 +150,8 @@ pub fn parse_response(
       }
     False ->
       case json.parse(response.body, error.wrapped_error_decoder()) {
-        Ok(api_error) ->
-          Error(ApiResponseError(response.status, api_error))
-        Error(_) ->
-          Error(UnexpectedResponse(response.status, response.body))
+        Ok(api_error) -> Error(ApiResponseError(response.status, api_error))
+        Error(_) -> Error(UnexpectedResponse(response.status, response.body))
       }
   }
 }
@@ -193,10 +187,7 @@ fn build_azure_request(
   path: String,
 ) -> Request(String) {
   let full_url =
-    config.api_base
-    <> "/openai/deployments/"
-    <> config.deployment_id
-    <> path
+    config.api_base <> "/openai/deployments/" <> config.deployment_id <> path
   let req = case uri.parse(full_url) {
     Ok(parsed) ->
       request.new()
@@ -218,13 +209,9 @@ fn build_azure_request(
 fn apply_config(req: Request(String), config: Config) -> Request(String) {
   let req =
     req
-    |> request.prepend_header(
-      "authorization",
-      "Bearer " <> config.api_key,
-    )
+    |> request.prepend_header("authorization", "Bearer " <> config.api_key)
   let req = case config.org_id {
-    Some(org_id) ->
-      req |> request.prepend_header("openai-organization", org_id)
+    Some(org_id) -> req |> request.prepend_header("openai-organization", org_id)
     None -> req
   }
   let req = case config.project_id {
@@ -242,17 +229,11 @@ fn apply_custom_headers(
   case headers {
     [] -> req
     [#(key, value), ..rest] ->
-      apply_custom_headers(
-        req |> request.prepend_header(key, value),
-        rest,
-      )
+      apply_custom_headers(req |> request.prepend_header(key, value), rest)
   }
 }
 
-fn set_scheme(
-  req: Request(String),
-  scheme: Option(String),
-) -> Request(String) {
+fn set_scheme(req: Request(String), scheme: Option(String)) -> Request(String) {
   case scheme {
     Some("https") -> request.set_scheme(req, http.Https)
     Some("http") -> request.set_scheme(req, http.Http)

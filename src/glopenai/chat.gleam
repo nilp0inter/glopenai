@@ -1,5 +1,4 @@
 /// Chat completions API: create, list, retrieve, and delete chat completions.
-
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode
 import gleam/http/request.{type Request}
@@ -12,8 +11,8 @@ import glopenai/error.{type GlopenaiError}
 import glopenai/internal
 import glopenai/internal/codec
 import glopenai/shared.{
-  type CompletionUsage, type FunctionCall, type FunctionName, type FunctionObject,
-  type ImageUrl, type ReasoningEffort, type ResponseFormat,
+  type CompletionUsage, type FunctionCall, type FunctionName,
+  type FunctionObject, type ImageUrl, type ReasoningEffort, type ResponseFormat,
 }
 
 // ============================================================================
@@ -425,12 +424,7 @@ pub fn with_metadata(
 // ============================================================================
 
 pub type UrlCitation {
-  UrlCitation(
-    start_index: Int,
-    end_index: Int,
-    title: String,
-    url: String,
-  )
+  UrlCitation(start_index: Int, end_index: Int, title: String, url: String)
 }
 
 pub type ResponseMessageAnnotation {
@@ -640,9 +634,7 @@ pub fn user_content_part_to_json(part: UserContentPart) -> json.Json {
   }
 }
 
-pub fn assistant_content_part_to_json(
-  part: AssistantContentPart,
-) -> json.Json {
+pub fn assistant_content_part_to_json(part: AssistantContentPart) -> json.Json {
   case part {
     AssistantTextPart(text) ->
       json.object([
@@ -758,7 +750,11 @@ pub fn web_search_options_to_json(opts: WebSearchOptions) -> json.Json {
         #(
           "approximate",
           codec.object_with_optional([], [
-            codec.optional_field("country", loc.approximate.country, json.string),
+            codec.optional_field(
+              "country",
+              loc.approximate.country,
+              json.string,
+            ),
             codec.optional_field("region", loc.approximate.region, json.string),
             codec.optional_field("city", loc.approximate.city, json.string),
             codec.optional_field(
@@ -773,9 +769,7 @@ pub fn web_search_options_to_json(opts: WebSearchOptions) -> json.Json {
   ])
 }
 
-pub fn stream_options_to_json(
-  opts: ChatCompletionStreamOptions,
-) -> json.Json {
+pub fn stream_options_to_json(opts: ChatCompletionStreamOptions) -> json.Json {
   codec.object_with_optional([], [
     codec.optional_field("include_usage", opts.include_usage, json.bool),
     codec.optional_field(
@@ -813,21 +807,18 @@ pub fn chat_message_to_json(message: ChatMessage) -> json.Json {
         [codec.optional_field("name", name, json.string)],
       )
     AssistantMessage(content, refusal, name, tool_calls) ->
-      codec.object_with_optional(
-        [#("role", json.string("assistant"))],
-        [
-          codec.optional_field(
-            "content",
-            content,
-            assistant_message_content_to_json,
-          ),
-          codec.optional_field("refusal", refusal, json.string),
-          codec.optional_field("name", name, json.string),
-          codec.optional_field("tool_calls", tool_calls, fn(calls) {
-            json.array(calls, tool_call_to_json)
-          }),
-        ],
-      )
+      codec.object_with_optional([#("role", json.string("assistant"))], [
+        codec.optional_field(
+          "content",
+          content,
+          assistant_message_content_to_json,
+        ),
+        codec.optional_field("refusal", refusal, json.string),
+        codec.optional_field("name", name, json.string),
+        codec.optional_field("tool_calls", tool_calls, fn(calls) {
+          json.array(calls, tool_call_to_json)
+        }),
+      ])
     ToolMessage(content, tool_call_id) ->
       json.object([
         #("role", json.string("tool")),
@@ -908,7 +899,8 @@ pub fn create_chat_completion_request_to_json(
       codec.optional_field("store", request.store, json.bool),
       codec.optional_field("metadata", request.metadata, fn(m) {
         json.object(
-          dict.to_list(m) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
+          dict.to_list(m)
+          |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
         )
       }),
       codec.optional_field(
@@ -1113,11 +1105,7 @@ fn chat_completion_deleted_decoder() -> decode.Decoder(ChatCompletionDeleted) {
   use object <- decode.field("object", decode.string)
   use id <- decode.field("id", decode.string)
   use deleted <- decode.field("deleted", decode.bool)
-  decode.success(ChatCompletionDeleted(
-    object: object,
-    id: id,
-    deleted: deleted,
-  ))
+  decode.success(ChatCompletionDeleted(object: object, id: id, deleted: deleted))
 }
 
 // Stream decoders
@@ -1239,9 +1227,7 @@ pub fn parse_stream_chunk(
   case data {
     "[DONE]" -> Ok(None)
     _ ->
-      case
-        json.parse(data, create_chat_completion_stream_response_decoder())
-      {
+      case json.parse(data, create_chat_completion_stream_response_decoder()) {
         Ok(chunk) -> Ok(Some(chunk))
         Error(decode_error) -> Error(error.JsonDecodeError(data, decode_error))
       }
@@ -1268,10 +1254,7 @@ pub fn create_request(
 pub fn create_response(
   response: Response(String),
 ) -> Result(CreateChatCompletionResponse, GlopenaiError) {
-  internal.parse_response(
-    response,
-    create_chat_completion_response_decoder(),
-  )
+  internal.parse_response(response, create_chat_completion_response_decoder())
 }
 
 /// Build a request to list stored chat completions.
@@ -1298,17 +1281,11 @@ pub fn retrieve_request(
 pub fn retrieve_response(
   response: Response(String),
 ) -> Result(CreateChatCompletionResponse, GlopenaiError) {
-  internal.parse_response(
-    response,
-    create_chat_completion_response_decoder(),
-  )
+  internal.parse_response(response, create_chat_completion_response_decoder())
 }
 
 /// Build a request to delete a stored chat completion.
-pub fn delete_request(
-  config: Config,
-  completion_id: String,
-) -> Request(String) {
+pub fn delete_request(config: Config, completion_id: String) -> Request(String) {
   internal.delete_request(config, "/chat/completions/" <> completion_id)
 }
 

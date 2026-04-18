@@ -1,5 +1,4 @@
 /// Legacy completions API: create text completions.
-
 import gleam/dynamic
 import gleam/dynamic/decode
 import gleam/http/request.{type Request}
@@ -321,10 +320,7 @@ pub fn logprobs_decoder() -> decode.Decoder(Logprobs) {
     "token_logprobs",
     decode.list(decode.optional(decode.float)),
   )
-  use top_logprobs <- decode.field(
-    "top_logprobs",
-    decode.list(decode.dynamic),
-  )
+  use top_logprobs <- decode.field("top_logprobs", decode.list(decode.dynamic))
   use text_offset <- decode.field("text_offset", decode.list(decode.int))
   decode.success(Logprobs(
     tokens: tokens,

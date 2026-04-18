@@ -5,9 +5,7 @@ import glopenai/moderation
 
 pub fn create_request_encodes_string_input_test() {
   let params =
-    moderation.new_create_request(
-      input: moderation.StringInput("I hate you"),
-    )
+    moderation.new_create_request(input: moderation.StringInput("I hate you"))
     |> moderation.with_model("omni-moderation-latest")
 
   let encoded =

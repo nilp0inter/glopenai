@@ -127,8 +127,7 @@ pub fn create_request_with_expires_after_test() {
           seconds: 3600,
         )),
     )
-  let assert True =
-    string.contains(req.body, "\"expires_after\":")
+  let assert True = string.contains(req.body, "\"expires_after\":")
   let assert True = string.contains(req.body, "\"anchor\":\"created_at\"")
   let assert True = string.contains(req.body, "\"seconds\":3600")
 }
@@ -157,18 +156,14 @@ pub fn create_response_with_completed_file_test() {
 
 pub fn add_part_request_uses_multipart_test() {
   let cfg = config.new("test-key")
-  let req =
-    upload.add_part_request(cfg, "upload_1", <<99, 100>>, "BOUND123")
+  let req = upload.add_part_request(cfg, "upload_1", <<99, 100>>, "BOUND123")
   assert req.method == http.Post
-  let assert True =
-    string.contains(req.path, "/uploads/upload_1/parts")
+  let assert True = string.contains(req.path, "/uploads/upload_1/parts")
   // Body should include the boundary and our raw bytes.
   let assert Ok(text_prefix) =
-    bit_array.to_string(
-      bit_array.from_string(
-        "--BOUND123\r\nContent-Disposition: form-data; name=\"data\"; filename=\"part\"\r\nContent-Type: application/octet-stream\r\n\r\n",
-      ),
-    )
+    bit_array.to_string(bit_array.from_string(
+      "--BOUND123\r\nContent-Disposition: form-data; name=\"data\"; filename=\"part\"\r\nContent-Type: application/octet-stream\r\n\r\n",
+    ))
   let assert Ok(body_text) = safe_to_string(req.body)
   let assert True = string.contains(body_text, text_prefix)
   let assert True = string.contains(body_text, "--BOUND123--\r\n")
@@ -200,8 +195,7 @@ pub fn complete_request_builds_test() {
         |> upload.with_md5("abc123"),
     )
   assert req.method == http.Post
-  let assert True =
-    string.contains(req.path, "/uploads/upload_1/complete")
+  let assert True = string.contains(req.path, "/uploads/upload_1/complete")
   let assert True =
     string.contains(req.body, "\"part_ids\":[\"part_1\",\"part_2\"]")
   let assert True = string.contains(req.body, "\"md5\":\"abc123\"")
@@ -211,8 +205,7 @@ pub fn cancel_request_builds_test() {
   let cfg = config.new("test-key")
   let req = upload.cancel_request(cfg, "upload_1")
   assert req.method == http.Post
-  let assert True =
-    string.contains(req.path, "/uploads/upload_1/cancel")
+  let assert True = string.contains(req.path, "/uploads/upload_1/cancel")
   // Cancel POSTs an empty JSON object body.
   assert req.body == "{}"
 }

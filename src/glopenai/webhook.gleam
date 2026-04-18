@@ -15,7 +15,6 @@
 /// `verify_signature_with_tolerance`.
 ///
 /// Once verified, decode the JSON body with `parse_event`.
-
 import gleam/bit_array
 import gleam/dynamic/decode
 import gleam/int
@@ -390,8 +389,7 @@ pub fn verify_signature_with_tolerance(
         True -> Error(Invalid("webhook timestamp is too new"))
         False -> {
           use secret_bytes <- result.try(decode_secret(secret))
-          let signed_payload =
-            webhook_id <> "." <> timestamp <> "." <> body
+          let signed_payload = webhook_id <> "." <> timestamp <> "." <> body
           let mac =
             hmac_sha256(secret_bytes, bit_array.from_string(signed_payload))
           let expected = base64_encode_binary(mac)

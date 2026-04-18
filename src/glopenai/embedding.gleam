@@ -1,5 +1,4 @@
 /// Embeddings API: create embeddings for text input.
-
 import gleam/dynamic/decode
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
@@ -159,11 +158,7 @@ pub fn embedding_decoder() -> decode.Decoder(Embedding) {
   use index <- decode.field("index", decode.int)
   use object <- decode.field("object", decode.string)
   use embedding <- decode.field("embedding", decode.list(decode.float))
-  decode.success(Embedding(
-    index: index,
-    object: object,
-    embedding: embedding,
-  ))
+  decode.success(Embedding(index: index, object: object, embedding: embedding))
 }
 
 pub fn embedding_usage_decoder() -> decode.Decoder(EmbeddingUsage) {

@@ -51,13 +51,14 @@ pub fn dynamic_to_json_null_test() {
 }
 
 pub fn dynamic_to_json_nested_test() {
-  let input =
-    "{\"a\": {\"b\": [1, \"two\", null, true]}, \"c\": 3.14}"
+  let input = "{\"a\": {\"b\": [1, \"two\", null, true]}, \"c\": 3.14}"
   let assert Ok(value) = json.parse(input, decode.dynamic)
   let result = codec.dynamic_to_json(value) |> json.to_string
   // Verify all values survived the round-trip
   let assert True = string.contains(result, "\"b\":[1,\"two\",null,true]")
-  let assert True = string.contains(result, "\"c\":3.14") || string.contains(result, "\"c\":3.14")
+  let assert True =
+    string.contains(result, "\"c\":3.14")
+    || string.contains(result, "\"c\":3.14")
 }
 
 // --- FunctionObject with parameters round-trip ---
@@ -120,8 +121,7 @@ pub fn function_object_parameters_round_trip_test() {
   let encoded = shared.function_object_to_json(function) |> json.to_string
 
   // Decode back
-  let assert Ok(decoded) =
-    json.parse(encoded, shared.function_object_decoder())
+  let assert Ok(decoded) = json.parse(encoded, shared.function_object_decoder())
 
   assert decoded.name == "get_temp"
   assert decoded.description == Some("Get temperature")
@@ -140,14 +140,12 @@ pub fn chat_tool_with_parameters_encodes_test() {
     )
 
   let tool =
-    chat.FunctionTool(
-      function: shared.FunctionObject(
-        name: "search",
-        description: Some("Search the web"),
-        parameters: Some(params),
-        strict: Some(True),
-      ),
-    )
+    chat.FunctionTool(function: shared.FunctionObject(
+      name: "search",
+      description: Some("Search the web"),
+      parameters: Some(params),
+      strict: Some(True),
+    ))
 
   let encoded = chat.chat_completion_tool_to_json(tool) |> json.to_string
   let assert True = string.contains(encoded, "\"type\":\"function\"")
